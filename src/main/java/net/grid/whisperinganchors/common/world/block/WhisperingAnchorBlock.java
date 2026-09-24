@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
 import net.grid.whisperinganchors.common.core.ModBlockEntities;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
+import net.grid.whisperinganchors.common.world.item.map.AnchorMarkerData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -12,9 +13,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -31,6 +32,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -38,6 +40,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class WhisperingAnchorBlock extends Block implements EntityBlock {
 
@@ -141,23 +144,52 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        Component name = stack.is(Items.NAME_TAG) ? stack.get(DataComponents.CUSTOM_NAME) : null;
-        DyeColor color = stack.getItem() instanceof DyeItem dye ? dye.getDyeColor() : null;
-        if (name == null && color == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        BlockPos top = topOf(pos, state);
 
-        List<AnchorEntity> anchors = AnchorEntity.boundTo(level, topOf(pos, state));
-        if (anchors.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (stack.is(Items.FILLED_MAP)) {
+            return toggleMapMarker(stack, level, top);
+        }
+        if (stack.is(Items.NAME_TAG)) {
+            return renameAnchor(stack, level, top, player);
+        }
+        if (stack.getItem() instanceof DyeItem dye) {
+            return applyToAnchors(stack, level, top, player, anchor -> anchor.setColor(dye.getDyeColor()));
+        }
+
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    private static ItemInteractionResult toggleMapMarker(ItemStack stack, Level level, BlockPos top) {
+        if (!level.isClientSide) {
+            MapItemSavedData data = MapItem.getSavedData(stack, level);
+            if (data != null && !((AnchorMarkerData) data).whisperingAnchors$toggleAnchor(level, top)) {
+                return ItemInteractionResult.FAIL;
+            }
+        }
+
+        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    private static ItemInteractionResult renameAnchor(ItemStack stack, Level level, BlockPos top, Player player) {
+        Component name = stack.get(DataComponents.CUSTOM_NAME);
+        if (name == null) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+
+        return applyToAnchors(stack, level, top, player, anchor -> {
+            anchor.setCustomName(name);
+            anchor.setCustomNameVisible(true);
+        });
+    }
+
+    private static ItemInteractionResult applyToAnchors(ItemStack stack, Level level, BlockPos top, Player player, Consumer<AnchorEntity> action) {
+        List<AnchorEntity> anchors = AnchorEntity.boundTo(level, top);
+        if (anchors.isEmpty()) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
 
         if (!level.isClientSide) {
-            for (AnchorEntity anchor : anchors) {
-                if (name != null) {
-                    anchor.setCustomName(name);
-                    anchor.setCustomNameVisible(true);
-                } else {
-                    anchor.setColor(color);
-                }
-            }
-
+            anchors.forEach(action);
             stack.consume(1, player);
         }
 
