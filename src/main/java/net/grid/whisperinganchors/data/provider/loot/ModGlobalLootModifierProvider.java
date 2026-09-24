@@ -22,6 +22,7 @@ public class ModGlobalLootModifierProvider extends GlobalLootModifierProvider {
 
     @Override
     protected void start() {
+        addLoot(ModLootTables.WA_BURIED_TREASURE, BuiltInLootTables.BURIED_TREASURE);
         addLoot(ModLootTables.WA_PILLAGER_OUTPOST, BuiltInLootTables.PILLAGER_OUTPOST);
     }
 

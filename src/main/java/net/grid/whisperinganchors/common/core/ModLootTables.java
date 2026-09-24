@@ -10,6 +10,7 @@ public class ModLootTables {
     public static final ResourceKey<LootTable> TRAVERSAL_TOWER_ARCHAEOLOGY_GUARANTEED = create("archaeology/traversal_tower_guaranteed");
     public static final ResourceKey<LootTable> TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL = create("archaeology/traversal_tower_general");
 
+    public static final ResourceKey<LootTable> WA_BURIED_TREASURE = create("chests/wa_buried_treasure");
     public static final ResourceKey<LootTable> WA_PILLAGER_OUTPOST = create("chests/wa_pillager_outpost");
 
     private static ResourceKey<LootTable> create(String name) {

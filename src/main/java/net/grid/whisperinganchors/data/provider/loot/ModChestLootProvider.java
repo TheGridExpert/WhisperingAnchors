@@ -1,5 +1,6 @@
 package net.grid.whisperinganchors.data.provider.loot;
 
+import net.grid.whisperinganchors.common.core.ModItems;
 import net.grid.whisperinganchors.common.core.ModLootTables;
 import net.grid.whisperinganchors.common.core.ModMapDecorations;
 import net.grid.whisperinganchors.common.core.tag.ModStructureTags;
@@ -21,6 +22,11 @@ public class ModChestLootProvider implements LootTableSubProvider {
 
     @Override
     public void generate(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> output) {
+        output.accept(ModLootTables.WA_BURIED_TREASURE, LootTable.lootTable()
+                .withPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1.0F))
+                        .when(LootItemRandomChanceCondition.randomChance(0.75F))
+                        .add(LootItem.lootTableItem(ModItems.HARKENING_BELL))));
         output.accept(ModLootTables.WA_PILLAGER_OUTPOST, LootTable.lootTable()
                 .withPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(1.0F))

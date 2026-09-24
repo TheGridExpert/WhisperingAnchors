@@ -1,5 +1,6 @@
 {
   "entries": [
+    "whispering_anchors:chests/wa_buried_treasure",
     "whispering_anchors:chests/wa_pillager_outpost"
   ],
   "replace": false
