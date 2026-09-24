@@ -1,0 +1,238 @@
+package net.grid.whisperinganchors.common.world.block;
+
+import com.mojang.serialization.MapCodec;
+import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
+import net.grid.whisperinganchors.common.core.ModBlockEntities;
+import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.DyeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+
+import javax.annotation.Nullable;
+import java.util.List;
+
+public class WhisperingAnchorBlock extends Block implements EntityBlock {
+
+    public static final MapCodec<WhisperingAnchorBlock> CODEC = simpleCodec(WhisperingAnchorBlock::new);
+
+    public static final EnumProperty<AnchorPart> PART = EnumProperty.create("part", AnchorPart.class);
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+
+    public static final int HEIGHT = 3;
+
+    private static final AnchorPart[] PLACEMENT_ORDER = { AnchorPart.BOTTOM, AnchorPart.MIDDLE, AnchorPart.TOP };
+
+    private static final VoxelShape TOP_SHAPE = Block.box(6.5, 10.0, 6.5, 9.5, 16.0, 9.5);
+
+    public WhisperingAnchorBlock(Properties properties) {
+        super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(PART, AnchorPart.TOP).setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    public MapCodec<? extends WhisperingAnchorBlock> codec() {
+        return CODEC;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(PART, FACING);
+    }
+
+    private static boolean isPart(BlockState state, AnchorPart part) {
+        return state.getBlock() instanceof WhisperingAnchorBlock && state.getValue(PART) == part;
+    }
+
+    public static BlockPos topOf(BlockPos pos, BlockState state) {
+        return pos.above(state.getValue(PART).belowTop());
+    }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return state.getValue(PART) == AnchorPart.TOP ? TOP_SHAPE : Shapes.empty();
+    }
+
+    @Override
+    protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+        return false;
+    }
+
+    @Override
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        if (context.getClickedFace() == Direction.DOWN) {
+            return stateFor(context, AnchorPart.TOP);
+        }
+
+        for (AnchorPart part : PLACEMENT_ORDER) {
+            BlockState state = stateFor(context, part);
+            if (state != null) {
+                return state;
+            }
+        }
+
+        return null;
+    }
+
+    private @Nullable BlockState stateFor(BlockPlaceContext context, AnchorPart clickedPart) {
+        BlockPos top = context.getClickedPos().above(clickedPart.belowTop());
+        if (!hasRoom(context, top) || !hasCeiling(context.getLevel(), top)) return null;
+
+        return defaultBlockState().setValue(PART, clickedPart).setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    private static boolean hasRoom(BlockPlaceContext context, BlockPos top) {
+        Level level = context.getLevel();
+        for (AnchorPart part : AnchorPart.values()) {
+            BlockPos target = top.below(part.belowTop());
+
+            if (target.getY() < level.getMinBuildHeight() || target.getY() >= level.getMaxBuildHeight()) {
+                return false;
+            }
+            if (!target.equals(context.getClickedPos()) && !level.getBlockState(target).canBeReplaced(context)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean hasCeiling(LevelReader level, BlockPos top) {
+        return Block.canSupportCenter(level, top.above(), Direction.DOWN);
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        BlockPos top = topOf(pos, state);
+        for (AnchorPart part : AnchorPart.values()) {
+            BlockPos target = top.below(part.belowTop());
+            if (!target.equals(pos)) {
+                level.setBlock(target, state.setValue(PART, part), Block.UPDATE_ALL);
+            }
+        }
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        Component name = stack.is(Items.NAME_TAG) ? stack.get(DataComponents.CUSTOM_NAME) : null;
+        DyeColor color = stack.getItem() instanceof DyeItem dye ? dye.getDyeColor() : null;
+        if (name == null && color == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
+        List<AnchorEntity> anchors = AnchorEntity.boundTo(level, topOf(pos, state));
+        if (anchors.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
+        if (!level.isClientSide) {
+            for (AnchorEntity anchor : anchors) {
+                if (name != null) {
+                    anchor.setCustomName(name);
+                    anchor.setCustomNameVisible(true);
+                } else {
+                    anchor.setColor(color);
+                }
+            }
+
+            stack.consume(1, player);
+        }
+
+        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @Override
+    protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        return state.getValue(PART) != AnchorPart.TOP || hasCeiling(level, pos);
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        AnchorPart part = state.getValue(PART);
+        if (direction == Direction.UP) {
+            AnchorPart expected = part.above();
+            boolean held = expected == null ? Block.canSupportCenter(level, neighborPos, Direction.DOWN) : isPart(neighborState, expected);
+            return held ? state : Blocks.AIR.defaultBlockState();
+        }
+
+        if (direction == Direction.DOWN) {
+            AnchorPart expected = part.below();
+            if (expected != null && !isPart(neighborState, expected)) {
+                return Blocks.AIR.defaultBlockState();
+            }
+        }
+
+        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    }
+
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide && state.getValue(PART) != AnchorPart.BOTTOM && (player.isCreative() || !player.hasCorrectToolForDrops(state, level, pos))) {
+            BlockPos bottom = topOf(pos, state).below(AnchorPart.BOTTOM.belowTop());
+            if (isPart(level.getBlockState(bottom), AnchorPart.BOTTOM)) {
+                level.setBlock(bottom, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
+                level.levelEvent(player, LevelEvent.PARTICLES_DESTROY_BLOCK, bottom, Block.getId(state));
+            }
+        }
+
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return state.getValue(PART) == AnchorPart.TOP ? new WhisperingAnchorBlockEntity(pos, state) : null;
+    }
+
+    @Override
+    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        if (type != ModBlockEntities.WHISPERING_ANCHOR.get()) return null;
+
+        if (level.isClientSide()) {
+            return (tickLevel, tickPos, tickState, blockEntity) -> {
+                if (blockEntity instanceof WhisperingAnchorBlockEntity anchor) {
+                    anchor.clientTick();
+                }
+            };
+        }
+
+        return (tickLevel, tickPos, tickState, blockEntity) -> {
+            if (blockEntity instanceof WhisperingAnchorBlockEntity anchor) {
+                anchor.serverTick();
+            }
+        };
+    }
+}

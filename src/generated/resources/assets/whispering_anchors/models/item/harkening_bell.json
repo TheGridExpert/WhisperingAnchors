@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:item/generated",
+  "overrides": [
+    {
+      "model": "whispering_anchors:item/harkening_bell_attuned",
+      "predicate": {
+        "whispering_anchors:attuned": 1.0
+      }
+    },
+    {
+      "model": "whispering_anchors:item/harkening_bell_ringing",
+      "predicate": {
+        "whispering_anchors:attuned": 1.0,
+        "whispering_anchors:ringing": 1.0
+      }
+    }
+  ],
+  "textures": {
+    "layer0": "whispering_anchors:item/harkening_bell"
+  }
+}

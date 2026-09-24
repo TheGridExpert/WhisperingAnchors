@@ -1,0 +1,105 @@
+{
+  "processors": [
+    {
+      "center_x": 5,
+      "center_z": 5,
+      "inner_radius": 4.0,
+      "input_predicate": {
+        "block": "minecraft:gravel",
+        "predicate_type": "minecraft:block_match"
+      },
+      "outer_radius": 7.0,
+      "processor_type": "whispering_anchors:radial_fade"
+    },
+    {
+      "processor_type": "whispering_anchors:weathering",
+      "rules": [
+        {
+          "chance": 0.24,
+          "input": "minecraft:deepslate_bricks",
+          "output": "minecraft:cracked_deepslate_bricks"
+        },
+        {
+          "chance": 0.24,
+          "input": "minecraft:deepslate_tiles",
+          "output": "minecraft:cracked_deepslate_tiles"
+        },
+        {
+          "chance": 0.08,
+          "input": "minecraft:cobblestone",
+          "output": "minecraft:mossy_cobblestone"
+        },
+        {
+          "chance": 0.08,
+          "input": "minecraft:cobblestone_stairs",
+          "output": "minecraft:mossy_cobblestone_stairs"
+        },
+        {
+          "chance": 0.08,
+          "input": "minecraft:cobblestone_wall",
+          "output": "minecraft:mossy_cobblestone_wall"
+        }
+      ]
+    },
+    {
+      "delegate": {
+        "processor_type": "minecraft:rule",
+        "rules": [
+          {
+            "block_entity_modifier": {
+              "type": "minecraft:append_loot",
+              "loot_table": "whispering_anchors:archaeology/traversal_tower_guaranteed"
+            },
+            "input_predicate": {
+              "block": "minecraft:gravel",
+              "predicate_type": "minecraft:block_match"
+            },
+            "location_predicate": {
+              "predicate_type": "minecraft:always_true"
+            },
+            "output_state": {
+              "Name": "minecraft:suspicious_gravel",
+              "Properties": {
+                "dusted": "0"
+              }
+            }
+          }
+        ]
+      },
+      "limit": 1,
+      "processor_type": "minecraft:capped"
+    },
+    {
+      "delegate": {
+        "processor_type": "minecraft:rule",
+        "rules": [
+          {
+            "block_entity_modifier": {
+              "type": "minecraft:append_loot",
+              "loot_table": "whispering_anchors:archaeology/traversal_tower_general"
+            },
+            "input_predicate": {
+              "block": "minecraft:gravel",
+              "predicate_type": "minecraft:block_match"
+            },
+            "location_predicate": {
+              "predicate_type": "minecraft:always_true"
+            },
+            "output_state": {
+              "Name": "minecraft:suspicious_gravel",
+              "Properties": {
+                "dusted": "0"
+              }
+            }
+          }
+        ]
+      },
+      "limit": {
+        "type": "minecraft:uniform",
+        "max_inclusive": 48,
+        "min_inclusive": 24
+      },
+      "processor_type": "minecraft:capped"
+    }
+  ]
+}

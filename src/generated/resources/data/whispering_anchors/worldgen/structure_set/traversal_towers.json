@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 1274903,
+    "separation": 16,
+    "spacing": 24
+  },
+  "structures": [
+    {
+      "structure": "whispering_anchors:traversal_tower",
+      "weight": 1
+    }
+  ]
+}

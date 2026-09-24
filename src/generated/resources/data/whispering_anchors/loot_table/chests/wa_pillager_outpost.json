@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "chance": 0.6,
+          "condition": "minecraft:random_chance"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "decoration": "whispering_anchors:traversal_tower",
+              "destination": "whispering_anchors:on_traversal_tower_maps",
+              "function": "minecraft:exploration_map",
+              "skip_existing_chunks": false
+            },
+            {
+              "function": "minecraft:set_name",
+              "name": {
+                "translate": "filled_map.whispering_anchors.traversal_tower"
+              },
+              "target": "item_name"
+            }
+          ],
+          "name": "minecraft:map"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "whispering_anchors:chests/wa_pillager_outpost"
+}

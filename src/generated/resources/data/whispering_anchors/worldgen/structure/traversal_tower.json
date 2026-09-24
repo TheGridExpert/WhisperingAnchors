@@ -1,0 +1,26 @@
+{
+  "type": "whispering_anchors:traversal_tower",
+  "biomes": "#whispering_anchors:has_structure/traversal_tower",
+  "captain_chance": 0.5,
+  "footprint": 13,
+  "ground_level": 0,
+  "max_scan_y": -15,
+  "max_terrain_difference": 10,
+  "min_scan_y": -55,
+  "pillagers": {
+    "type": "minecraft:uniform",
+    "max_inclusive": 8,
+    "min_inclusive": 5
+  },
+  "scan_step": 10,
+  "spawn_floors": "whispering_anchors:traversal_tower_floors",
+  "spawn_overrides": {},
+  "start_pool": "whispering_anchors:traversal_tower",
+  "step": "surface_structures",
+  "terrain_adaptation": "beard_thin",
+  "vindicators": {
+    "type": "minecraft:uniform",
+    "max_inclusive": 2,
+    "min_inclusive": 0
+  }
+}

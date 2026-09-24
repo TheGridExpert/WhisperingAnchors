@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "WHISPERING_ANCHORS_RINGING",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": {
+        "class": "net/grid/whisperinganchors/client/extension/HarkeningBellClientExtensions",
+        "field": "RINGING_ARM_POSE"
+      }
+    }
+  ]
+}

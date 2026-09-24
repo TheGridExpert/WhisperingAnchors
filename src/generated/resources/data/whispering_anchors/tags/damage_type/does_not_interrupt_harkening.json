@@ -1,0 +1,18 @@
+{
+  "values": [
+    "minecraft:out_of_world",
+    "minecraft:outside_border",
+    "minecraft:in_wall",
+    "minecraft:cramming",
+    "minecraft:drown",
+    "minecraft:dry_out",
+    "minecraft:starve",
+    "minecraft:freeze",
+    "minecraft:on_fire",
+    "minecraft:hot_floor",
+    "minecraft:cactus",
+    "minecraft:sweet_berry_bush",
+    "minecraft:fall",
+    "minecraft:wither"
+  ]
+}

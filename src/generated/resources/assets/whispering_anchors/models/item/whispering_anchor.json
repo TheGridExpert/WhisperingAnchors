@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "whispering_anchors:item/whispering_anchor"
+  }
+}

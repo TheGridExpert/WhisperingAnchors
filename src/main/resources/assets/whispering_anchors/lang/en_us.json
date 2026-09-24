@@ -1,0 +1,38 @@
+{
+  "block.whispering_anchors.whispering_anchor": "Whispering Anchor",
+
+  "block.minecraft.banner.whispering_anchors.anchor": "Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.black": "Black Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.blue": "Blue Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.brown": "Brown Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.cyan": "Cyan Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.gray": "Gray Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.green": "Green Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.light_blue": "Light Blue Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.light_gray": "Light Gray Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.lime": "Lime Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.magenta": "Magenta Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.orange": "Orange Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.pink": "Pink Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.purple": "Purple Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.red": "Red Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.white": "White Anchor",
+  "block.minecraft.banner.whispering_anchors.anchor.yellow": "Yellow Anchor",
+
+  "item.whispering_anchors.harkening_bell": "Harkening Bell",
+  "item.whispering_anchors.anchor_banner_pattern": "Banner Pattern",
+  "item.whispering_anchors.anchor_banner_pattern.desc": "Anchor",
+
+  "entity.whispering_anchors.anchor": "Anchor",
+
+  "filled_map.whispering_anchors.traversal_tower": "Traversal Tower Map",
+
+  "message.whispering_anchors.anchor_obstructed": "The whispers of the anchor cannot be harkened: it's obstructed",
+
+  "tooltip.whispering_anchors.harkening_bell.attuned": "Attuned to [%s]",
+
+  "subtitles.whispering_anchors.harkening_bell_ringing": "Harkening Bell rings",
+  "subtitles.whispering_anchors.whispers": "Whispers",
+
+  "death.attack.whispering_anchors.anchor_swing": "%1$s was crushed by a swinging anchor"
+}

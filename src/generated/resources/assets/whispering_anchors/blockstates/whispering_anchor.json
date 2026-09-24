@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "part=bottom": {
+      "model": "whispering_anchors:block/whispering_anchor_lower"
+    },
+    "part=middle": {
+      "model": "whispering_anchors:block/whispering_anchor_lower"
+    },
+    "part=top": {
+      "model": "whispering_anchors:block/whispering_anchor_upper"
+    }
+  }
+}

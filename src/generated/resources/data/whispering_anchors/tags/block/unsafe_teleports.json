@@ -1,0 +1,10 @@
+{
+  "values": [
+    "minecraft:lava",
+    "minecraft:lava_cauldron",
+    "minecraft:magma_block",
+    "minecraft:cactus",
+    "#minecraft:campfires",
+    "#minecraft:fire"
+  ]
+}

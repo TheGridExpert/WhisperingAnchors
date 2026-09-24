@@ -1,0 +1,20 @@
+{
+  "parent": "minecraft:item/generated",
+  "display": {
+    "thirdperson_righthand": {
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ],
+      "translation": [
+        0,
+        -6.75,
+        1
+      ]
+    }
+  },
+  "textures": {
+    "layer0": "whispering_anchors:item/harkening_bell_colorless"
+  }
+}
