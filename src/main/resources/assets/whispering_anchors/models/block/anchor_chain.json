@@ -1,21 +1,22 @@
 {
 	"render_type": "minecraft:cutout",
+	"texture_size": [64, 64],
 	"textures": {
-		"particle": "whispering_anchors:block/whispering_anchor_chain",
-		"chain": "whispering_anchors:block/whispering_anchor_chain"
+		"particle": "whispering_anchors:block/whispering_anchor",
+		"chain": "whispering_anchors:block/whispering_anchor"
 	},
 	"elements": [
 		{
-			"from": [5.5, 13, 8],
-			"to": [10.5, 18, 8],
-			"rotation": {"angle": -45, "axis": "y", "origin": [8, 4, 8]},
+			"from": [8, 13, 5.5],
+			"to": [8, 18, 10.5],
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 4, 8]},
 			"faces": {
-				"north": {"uv": [0, 0, 5, 5], "texture": "#chain"},
-				"east": {"uv": [0, 0, 0, 4], "texture": "#chain"},
-				"south": {"uv": [0, 0, 5, 5], "texture": "#chain"},
-				"west": {"uv": [0, 0, 0, 4], "texture": "#chain"},
-				"up": {"uv": [0, 0, 4, 0], "texture": "#chain"},
-				"down": {"uv": [0, 0, 4, 0], "texture": "#chain"}
+				"north": {"uv": [7.5, 3.25, 7.5, 4.5], "texture": "#chain"},
+				"east": {"uv": [7.5, 3.25, 8.75, 4.5], "texture": "#chain"},
+				"south": {"uv": [7.5, 3.25, 7.5, 4.5], "texture": "#chain"},
+				"west": {"uv": [8.75, 3.25, 10, 4.5], "texture": "#chain"},
+				"up": {"uv": [7.5, 3.25, 7.5, 4.5], "texture": "#chain"},
+				"down": {"uv": [7.5, 3.25, 7.5, 4.5], "texture": "#chain"}
 			}
 		}
 	]
