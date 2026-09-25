@@ -3,7 +3,7 @@
 	"texture_size": [64, 64],
 	"textures": {
 		"anchor": "whispering_anchors:block/whispering_anchor",
-		"particle": "block/texture"
+		"particle": "whispering_anchors:block/whispering_anchor"
 	},
 	"elements": [
 		{
