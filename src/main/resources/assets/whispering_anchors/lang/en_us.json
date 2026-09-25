@@ -34,5 +34,10 @@
   "subtitles.whispering_anchors.harkening_bell_ringing": "Harkening Bell rings",
   "subtitles.whispering_anchors.whispers": "Whispers",
 
-  "death.attack.whispering_anchors.anchor_swing": "%1$s was crushed by a swinging anchor"
+  "death.attack.whispering_anchors.anchor_swing": "%1$s was crushed by a swinging anchor",
+
+  "whispering_anchors.configuration.makeAnchorsStatic": "Make Anchors Static",
+  "whispering_anchors.configuration.makeAnchorsStatic.desc": "When enabled, whispering anchors are drawn as still blocks instead of swinging entities with physics.",
+  "whispering_anchors.configuration.staticAnchorHitboxes": "Static Anchors Have Hitboxes",
+  "whispering_anchors.configuration.staticAnchorHitboxes.desc": "When enabled, the lower two blocks of static anchors have a hitbox and collision. Only used when makeAnchorsStatic is true."
 }

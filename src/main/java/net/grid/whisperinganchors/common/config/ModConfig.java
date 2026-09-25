@@ -28,12 +28,11 @@ public class ModConfig {
 
         public Server(ModConfigSpec.Builder builder) {
             this.makeAnchorsStatic = builder
-                    .comment("Draws whispering anchors as still blocks instead of swinging entities with physics.")
+                    .comment("When enabled, whispering anchors are drawn as still blocks instead of swinging entities with physics.")
                     .worldRestart()
                     .define("makeAnchorsStatic", false);
-
             this.staticAnchorHitboxes = builder
-                    .comment("Gives the lower two blocks of static anchors a hitbox and collision. Only used when makeAnchorsStatic is true.")
+                    .comment("When enabled, the lower two blocks of static anchors have a hitbox and collision. Only used when makeAnchorsStatic is true.")
                     .worldRestart()
                     .define("staticAnchorHitboxes", true);
         }
