@@ -77,7 +77,7 @@ public class HarkeningBellClientExtensions implements IClientItemExtensions {
 
         poseStack.translate(0.0F, RING_BOB * Math.abs(swing) / RING_AMPLITUDE, 0.0F);
         poseStack.rotateAround(Axis.ZP.rotationDegrees(side * swing), 0.0F, RING_PIVOT_RISE * SPRITE_HEIGHT, 0.0F);
-        poseStack.mulPose(Axis.XP.rotationDegrees(side * RAISE_TURN * raise));
+        poseStack.mulPose(Axis.XP.rotationDegrees(RAISE_TURN * raise));
 
         return true;
     }
