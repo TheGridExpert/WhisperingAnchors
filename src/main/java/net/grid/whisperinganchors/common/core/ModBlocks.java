@@ -22,6 +22,7 @@ public class ModBlocks {
             .strength(25.0F, 1200.0F)
             .sound(SoundType.HEAVY_CORE)
             .noOcclusion()
+            .dynamicShape()
             .pushReaction(PushReaction.DESTROY)
             .noLootTable()
     );

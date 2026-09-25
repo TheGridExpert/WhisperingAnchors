@@ -1,7 +1,10 @@
 package net.grid.whisperinganchors.common.world.entity;
 
+import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
 import net.grid.whisperinganchors.common.world.block.AnchorPart;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
+import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
 import net.grid.whisperinganchors.common.core.ModDamageTypes;
 import net.grid.whisperinganchors.common.core.ModEntities;
 import net.grid.whisperinganchors.common.core.ModParticles;
@@ -38,10 +41,11 @@ import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class AnchorEntity extends Entity {
+public class AnchorEntity extends Entity implements AnchorIdentity {
 
     public static final String KEY_BOUND_POS = "BoundPos";
     public static final String KEY_COLOR = "Color";
+    public static final String KEY_CUSTOM_NAME = "CustomName";
     public static final String KEY_CHAIN_X = "ChainX";
     public static final String KEY_CHAIN_Z = "ChainZ";
     public static final String KEY_TILT_X = "TiltX";
@@ -170,9 +174,17 @@ public class AnchorEntity extends Entity {
         return shacklePos(chainX, chainZ).add(hang(SHACKLE_TO_CENTRE, tiltX, tiltZ));
     }
 
-    public Vec3 randomBodyPoint(RandomSource random) {
-        AABB body = getBoundingBox();
-        return new Vec3(getX() + random.nextGaussian() * body.getXsize() * CRUMBLE_SPREAD, Mth.lerp(random.nextDouble(), body.minY, body.maxY), getZ() + random.nextGaussian() * body.getZsize() * CRUMBLE_SPREAD);
+    public static Vec3 restingCentreOfMass(BlockPos top) {
+        return new Vec3(top.getX() + 0.5, top.getY() + 1.0 - RESTING_DROP, top.getZ() + 0.5);
+    }
+
+    public static AABB restingBody(BlockPos top) {
+        return AABB.ofSize(restingCentreOfMass(top).add(0.0, MODEL_CENTRE_ABOVE_MASS, 0.0), BODY_WIDTH, BODY_HEIGHT, BODY_WIDTH);
+    }
+
+    public static Vec3 randomPointIn(AABB body, RandomSource random) {
+        Vec3 centre = body.getCenter();
+        return new Vec3(centre.x + random.nextGaussian() * body.getXsize() * CRUMBLE_SPREAD, Mth.lerp(random.nextDouble(), body.minY, body.maxY), centre.z + random.nextGaussian() * body.getZsize() * CRUMBLE_SPREAD);
     }
 
     @Override
@@ -211,7 +223,17 @@ public class AnchorEntity extends Entity {
             }
         } else {
             if (!isStillAnchored()) {
-                crumble();
+                if (level() instanceof ServerLevel serverLevel) {
+                    crumble(serverLevel, getBoundingBox());
+                }
+                discard();
+                return;
+            }
+
+            if (ModConfig.staticAnchors()) {
+                if (level().getBlockEntity(getBoundPos()) instanceof WhisperingAnchorBlockEntity blockEntity) {
+                    blockEntity.adopt(this);
+                }
                 discard();
                 return;
             }
@@ -234,15 +256,13 @@ public class AnchorEntity extends Entity {
         return state.getBlock() instanceof WhisperingAnchorBlock && state.getValue(WhisperingAnchorBlock.PART) == AnchorPart.TOP;
     }
 
-    private void crumble() {
-        if (!(level() instanceof ServerLevel serverLevel)) return;
-
-        AABB body = getBoundingBox();
+    public static void crumble(ServerLevel level, AABB body) {
+        Vec3 centre = body.getCenter();
         double rowHeight = body.getYsize() / CRUMBLE_ROWS;
 
         for (int row = 0; row < CRUMBLE_ROWS; row++) {
             double y = body.minY + (row + 0.5) * rowHeight;
-            serverLevel.sendParticles(ModParticles.ANCHOR_CRUMBLE.get(), getX(), y, getZ(), CRUMBLE_PARTICLES_PER_ROW, body.getXsize() * CRUMBLE_SPREAD, rowHeight * CRUMBLE_SPREAD, body.getZsize() * CRUMBLE_SPREAD, 0.0);
+            level.sendParticles(ModParticles.ANCHOR_CRUMBLE.get(), centre.x, y, centre.z, CRUMBLE_PARTICLES_PER_ROW, body.getXsize() * CRUMBLE_SPREAD, rowHeight * CRUMBLE_SPREAD, body.getZsize() * CRUMBLE_SPREAD, 0.0);
         }
     }
 
@@ -588,13 +608,21 @@ public class AnchorEntity extends Entity {
         return getBoundPos().equals(pos);
     }
 
+    @Override
     public @Nullable DyeColor getColor() {
         int id = this.entityData.get(DATA_COLOR);
         return id == UNDYED ? null : DyeColor.byId(id);
     }
 
+    @Override
     public void setColor(@Nullable DyeColor color) {
         this.entityData.set(DATA_COLOR, color == null ? UNDYED : color.getId());
+    }
+
+    @Override
+    public void rename(Component name) {
+        setCustomName(name);
+        setCustomNameVisible(true);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package net.grid.whisperinganchors.misc.mixin;
 
-import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
+import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
 import net.grid.whisperinganchors.common.world.item.map.AnchorMarker;
 import net.grid.whisperinganchors.common.world.item.map.AnchorMarkerData;
 import net.minecraft.core.BlockPos;
@@ -99,7 +99,7 @@ public abstract class MapItemSavedDataMixin implements AnchorMarkerData {
 
             if (!(reader instanceof Level level)) continue;
 
-            AnchorEntity anchor = AnchorMarker.loadedAnchor(level, pos);
+            AnchorIdentity anchor = AnchorIdentity.at(level, pos);
             if (anchor == null) continue;
 
             AnchorMarker current = AnchorMarker.of(pos, anchor);
@@ -120,7 +120,7 @@ public abstract class MapItemSavedDataMixin implements AnchorMarkerData {
         if (mapX < -63.0 || mapZ < -63.0 || mapX > 63.0 || mapZ > 63.0) return false;
         if (!AnchorMarker.isAnchor(level, top)) return false;
 
-        AnchorMarker marker = AnchorMarker.of(top, AnchorMarker.loadedAnchor(level, top));
+        AnchorMarker marker = AnchorMarker.of(top, AnchorIdentity.at(level, top));
         if (this.whisperingAnchors$anchorMarkers.remove(marker.getId()) != null) {
             removeDecoration(marker.getId());
             return true;

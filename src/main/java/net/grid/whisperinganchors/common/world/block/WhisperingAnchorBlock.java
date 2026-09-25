@@ -1,6 +1,7 @@
 package net.grid.whisperinganchors.common.world.block;
 
 import com.mojang.serialization.MapCodec;
+import net.grid.whisperinganchors.common.config.ModConfig;
 import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
 import net.grid.whisperinganchors.common.core.ModBlockEntities;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
@@ -9,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,13 +35,14 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.function.Consumer;
 
 public class WhisperingAnchorBlock extends Block implements EntityBlock {
@@ -53,7 +56,10 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
 
     private static final AnchorPart[] PLACEMENT_ORDER = { AnchorPart.BOTTOM, AnchorPart.MIDDLE, AnchorPart.TOP };
 
-    private static final VoxelShape TOP_SHAPE = Block.box(6.5, 10.0, 6.5, 9.5, 16.0, 9.5);
+    private static final VoxelShape CHAIN_SHAPE = Block.box(6.5, 10.0, 6.5, 9.5, 16.0, 9.5);
+    private static final VoxelShape TOP_SHAPE = Shapes.join(CHAIN_SHAPE, restingBodyWithin(AnchorPart.TOP), BooleanOp.OR);
+    private static final VoxelShape MIDDLE_SHAPE = restingBodyWithin(AnchorPart.MIDDLE);
+    private static final VoxelShape BOTTOM_SHAPE = restingBodyWithin(AnchorPart.BOTTOM);
 
     public WhisperingAnchorBlock(Properties properties) {
         super(properties);
@@ -78,9 +84,18 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
         return pos.above(state.getValue(PART).belowTop());
     }
 
+    private static VoxelShape restingBodyWithin(AnchorPart part) {
+        AABB body = AnchorEntity.restingBody(BlockPos.ZERO).move(0.0, part.belowTop(), 0.0);
+        return Shapes.create(body.intersect(new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    }
+
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return state.getValue(PART) == AnchorPart.TOP ? TOP_SHAPE : Shapes.empty();
+        return switch (state.getValue(PART)) {
+            case TOP -> ModConfig.solidStaticAnchors() ? TOP_SHAPE : CHAIN_SHAPE;
+            case MIDDLE -> ModConfig.solidStaticAnchors() ? MIDDLE_SHAPE : Shapes.empty();
+            case BOTTOM -> ModConfig.solidStaticAnchors() ? BOTTOM_SHAPE : Shapes.empty();
+        };
     }
 
     @Override
@@ -153,7 +168,7 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
             return renameAnchor(stack, level, top, player);
         }
         if (stack.getItem() instanceof DyeItem dye) {
-            return applyToAnchors(stack, level, top, player, anchor -> anchor.setColor(dye.getDyeColor()));
+            return applyToAnchor(stack, level, top, player, anchor -> anchor.setColor(dye.getDyeColor()));
         }
 
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -176,20 +191,17 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
-        return applyToAnchors(stack, level, top, player, anchor -> {
-            anchor.setCustomName(name);
-            anchor.setCustomNameVisible(true);
-        });
+        return applyToAnchor(stack, level, top, player, anchor -> anchor.rename(name));
     }
 
-    private static ItemInteractionResult applyToAnchors(ItemStack stack, Level level, BlockPos top, Player player, Consumer<AnchorEntity> action) {
-        List<AnchorEntity> anchors = AnchorEntity.boundTo(level, top);
-        if (anchors.isEmpty()) {
+    private static ItemInteractionResult applyToAnchor(ItemStack stack, Level level, BlockPos top, Player player, Consumer<AnchorIdentity> action) {
+        AnchorIdentity anchor = AnchorIdentity.at(level, top);
+        if (anchor == null) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
         if (!level.isClientSide) {
-            anchors.forEach(action);
+            action.accept(anchor);
             stack.consume(1, player);
         }
 
@@ -218,6 +230,15 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
         }
 
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && state.getValue(PART) == AnchorPart.TOP && level instanceof ServerLevel serverLevel && ModConfig.staticAnchors()) {
+            AnchorEntity.crumble(serverLevel, AnchorEntity.restingBody(pos));
+        }
+
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override

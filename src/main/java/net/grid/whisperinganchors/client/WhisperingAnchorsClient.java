@@ -8,7 +8,9 @@ import net.grid.whisperinganchors.client.model.FreeAngleModel;
 import net.grid.whisperinganchors.client.particle.AnchorCrumbleParticle;
 import net.grid.whisperinganchors.client.renderer.BellTint;
 import net.grid.whisperinganchors.client.renderer.DyedGlint;
+import net.grid.whisperinganchors.client.renderer.blockentity.WhisperingAnchorRenderer;
 import net.grid.whisperinganchors.client.renderer.entity.AnchorEntityRenderer;
+import net.grid.whisperinganchors.common.core.ModBlockEntities;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
@@ -59,6 +61,7 @@ public final class WhisperingAnchorsClient {
     @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.ANCHOR.get(), AnchorEntityRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.WHISPERING_ANCHOR.get(), WhisperingAnchorRenderer::new);
     }
 
     @SubscribeEvent

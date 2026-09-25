@@ -1,0 +1,41 @@
+package net.grid.whisperinganchors.common.config;
+
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+public class ModConfig {
+
+    public static final ModConfigSpec serverSpec;
+    public static final Server SERVER;
+
+    static {
+        var serverPair = new ModConfigSpec.Builder().configure(Server::new);
+        serverSpec = serverPair.getRight();
+        SERVER = serverPair.getLeft();
+    }
+
+    public static boolean staticAnchors() {
+        return serverSpec.isLoaded() && SERVER.makeAnchorsStatic.get();
+    }
+
+    public static boolean solidStaticAnchors() {
+        return staticAnchors() && SERVER.staticAnchorHitboxes.get();
+    }
+
+    public static class Server {
+
+        public final ModConfigSpec.BooleanValue makeAnchorsStatic;
+        public final ModConfigSpec.BooleanValue staticAnchorHitboxes;
+
+        public Server(ModConfigSpec.Builder builder) {
+            this.makeAnchorsStatic = builder
+                    .comment("Draws whispering anchors as still blocks instead of swinging entities with physics.")
+                    .worldRestart()
+                    .define("makeAnchorsStatic", false);
+
+            this.staticAnchorHitboxes = builder
+                    .comment("Gives the lower two blocks of static anchors a hitbox and collision. Only used when makeAnchorsStatic is true.")
+                    .worldRestart()
+                    .define("staticAnchorHitboxes", true);
+        }
+    }
+}

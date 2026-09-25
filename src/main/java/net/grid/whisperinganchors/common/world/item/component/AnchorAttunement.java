@@ -5,9 +5,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModPoiTypes;
 import net.grid.whisperinganchors.common.util.AnchorNames;
+import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
-import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -22,7 +22,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Optional;
 
 public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorName, Optional<DyeColor> anchorColor) {
@@ -49,8 +48,7 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
 
     public static AnchorAttunement of(Level level, BlockPos pos, BlockState state) {
         BlockPos top = WhisperingAnchorBlock.topOf(pos, state);
-        List<AnchorEntity> anchors = AnchorEntity.boundTo(level, top);
-        AnchorEntity anchor = anchors.isEmpty() ? null : anchors.getFirst();
+        AnchorIdentity anchor = AnchorIdentity.at(level, top);
 
         return new AnchorAttunement(GlobalPos.of(level.dimension(), top), anchor == null ? Optional.empty() : Optional.ofNullable(anchor.getCustomName()), anchor == null ? Optional.empty() : Optional.ofNullable(anchor.getColor()));
     }
@@ -75,7 +73,7 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
             return this;
         }
 
-        AnchorEntity anchor = blockEntity.getAnchor();
+        AnchorIdentity anchor = blockEntity.identity();
         if (anchor == null) return this;
 
         Optional<Component> name = Optional.ofNullable(anchor.getCustomName());
