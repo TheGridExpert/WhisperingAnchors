@@ -100,6 +100,21 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final float SYNC_EPSILON = 0.0008F;
     private static final float CLIENT_CORRECTION = 0.35F;
 
+    private static final double TIP_BELOW_SHACKLE = SHACKLE_TO_CENTRE + BODY_HEIGHT * 0.5 - MODEL_CENTRE_ABOVE_MASS;
+    private static final double TIP_ARM = CHAIN_LENGTH + TIP_BELOW_SHACKLE;
+    private static final double ORBIT_RADIUS = 0.5;
+    private static final double ORBIT_NATURAL_RATE = Math.sqrt(GRAVITY * (CHAIN_LENGTH + SHACKLE_TO_CENTRE) / (GYRATION_RADIUS_SQ + (CHAIN_LENGTH + SHACKLE_TO_CENTRE) * (CHAIN_LENGTH + SHACKLE_TO_CENTRE)));
+    private static final double ORBIT_SPIN_RATE = ORBIT_NATURAL_RATE * 1.75;
+    private static final double ORBIT_RADIAL_STIFFNESS = 0.004;
+    private static final double ORBIT_DAMPING = 0.04;
+    private static final double ORBIT_RADIAL_CATCH_UP = 0.0004;
+    private static final double ORBIT_MAX_CATCH_UP = 0.004;
+    private static final float ORBIT_RAMP_UP = 1.0F / 60.0F;
+    private static final float ORBIT_RAMP_DOWN = 1.0F / 20.0F;
+    private static final int ORBIT_HOLD = 3;
+    private static final double ORBIT_SPIN_MOMENTUM = 0.002;
+    private static final double ORBIT_RESPONSE_LOSS = 0.8;
+
     private static final int CRUMBLE_ROWS = 5;
     private static final int CRUMBLE_PARTICLES_PER_ROW = 10;
     private static final double CRUMBLE_SPREAD = 0.25;
@@ -114,6 +129,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final EntityDataAccessor<Float> DATA_TILT_VELOCITY_X = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_TILT_VELOCITY_Z = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_COLOR = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Byte> DATA_ORBIT_DIRECTION = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.BYTE);
 
     private float chainX;
     private float chainZ;
@@ -132,6 +148,10 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private float sentTiltX;
     private float sentTiltZ;
     private int impactSoundCooldown;
+    private int orbitTicks;
+    private int orbitDirection;
+    private float orbitStrength;
+    private double orbitCatchUp;
 
     public AnchorEntity(EntityType<? extends AnchorEntity> type, Level level) {
         super(type, level);
@@ -152,7 +172,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         return new AABB(top).inflate(SEARCH_RADIUS);
     }
 
-    public static List<AnchorEntity> boundTo(Level level, BlockPos top) {
+    public static List<AnchorEntity> findBoundTo(Level level, BlockPos top) {
         return level.getEntitiesOfClass(AnchorEntity.class, searchArea(top), anchor -> anchor.isBoundTo(top));
     }
 
@@ -161,17 +181,17 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         return new Vec3(bound.getX() + 0.5, bound.getY() + 1.0 - FIXED_CHAIN_LENGTH, bound.getZ() + 0.5);
     }
 
-    private static Vec3 hang(double length, float angleX, float angleZ) {
+    private static Vec3 pendulumOffset(double length, float angleX, float angleZ) {
         double cosZ = Math.cos(angleZ);
         return new Vec3(length * Math.sin(angleX) * cosZ, -length * Math.cos(angleX) * cosZ, length * Math.sin(angleZ));
     }
 
     public Vec3 shacklePos(float chainX, float chainZ) {
-        return getSuspensionPoint().add(hang(CHAIN_LENGTH, chainX, chainZ));
+        return getSuspensionPoint().add(pendulumOffset(CHAIN_LENGTH, chainX, chainZ));
     }
 
     public Vec3 centreOfMass(float chainX, float chainZ, float tiltX, float tiltZ) {
-        return shacklePos(chainX, chainZ).add(hang(SHACKLE_TO_CENTRE, tiltX, tiltZ));
+        return shacklePos(chainX, chainZ).add(pendulumOffset(SHACKLE_TO_CENTRE, tiltX, tiltZ));
     }
 
     public static Vec3 restingCentreOfMass(BlockPos top) {
@@ -224,15 +244,15 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         } else {
             if (!isStillAnchored()) {
                 if (level() instanceof ServerLevel serverLevel) {
-                    crumble(serverLevel, getBoundingBox());
+                    spawnCrumbleParticles(serverLevel, getBoundingBox());
                 }
                 discard();
                 return;
             }
 
-            if (ModConfig.staticAnchors()) {
+            if (ModConfig.areAnchorsStatic()) {
                 if (level().getBlockEntity(getBoundPos()) instanceof WhisperingAnchorBlockEntity blockEntity) {
-                    blockEntity.adopt(this);
+                    blockEntity.copyIdentityFrom(this);
                 }
                 discard();
                 return;
@@ -242,7 +262,11 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
                 this.impactSoundCooldown--;
             }
 
-            absorbPush();
+            if (this.orbitTicks > 0 && --this.orbitTicks == 0) {
+                this.entityData.set(DATA_ORBIT_DIRECTION, (byte) 0);
+            }
+
+            convertPushToSwing();
             tickPendulum();
             collideWithNearbyAnchors();
             syncState();
@@ -256,7 +280,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         return state.getBlock() instanceof WhisperingAnchorBlock && state.getValue(WhisperingAnchorBlock.PART) == AnchorPart.TOP;
     }
 
-    public static void crumble(ServerLevel level, AABB body) {
+    public static void spawnCrumbleParticles(ServerLevel level, AABB body) {
         Vec3 centre = body.getCenter();
         double rowHeight = body.getYsize() / CRUMBLE_ROWS;
 
@@ -266,7 +290,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         }
     }
 
-    private void absorbPush() {
+    private void convertPushToSwing() {
         Vec3 push = getDeltaMovement();
         double speed = Math.sqrt(push.x * push.x + push.z * push.z);
         if (speed < 1.0E-4) return;
@@ -276,7 +300,90 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         applyImpulse(push.x / speed, push.z / speed, getY(), speed * VICTIM_MASS_RATIO);
     }
 
+    public void refreshOrbitDrive() {
+        this.orbitTicks = ORBIT_HOLD;
+        if (this.entityData.get(DATA_ORBIT_DIRECTION) != 0) return;
+
+        double momentum = tipX() * tipVelZ() - tipZ() * tipVelX();
+        byte spin = this.orbitDirection != 0 ? (byte) this.orbitDirection : Math.abs(momentum) > ORBIT_SPIN_MOMENTUM ? (byte) Math.signum(momentum) : 1;
+        this.entityData.set(DATA_ORBIT_DIRECTION, spin);
+    }
+
+    public int getOrbitDirection() {
+        return this.orbitDirection == 0 ? 1 : this.orbitDirection;
+    }
+
+    private double tipX() {
+        return CHAIN_LENGTH * Math.sin(this.chainX) + TIP_BELOW_SHACKLE * Math.sin(this.tiltX);
+    }
+
+    private double tipZ() {
+        return CHAIN_LENGTH * Math.sin(this.chainZ) + TIP_BELOW_SHACKLE * Math.sin(this.tiltZ);
+    }
+
+    private double tipVelX() {
+        return CHAIN_LENGTH * this.chainVelX + TIP_BELOW_SHACKLE * this.tiltVelX;
+    }
+
+    private double tipVelZ() {
+        return CHAIN_LENGTH * this.chainVelZ + TIP_BELOW_SHACKLE * this.tiltVelZ;
+    }
+
+    private void applyOrbitDrive() {
+        byte spin = this.entityData.get(DATA_ORBIT_DIRECTION);
+        if (spin != 0) {
+            this.orbitDirection = spin;
+            this.orbitStrength = Math.min(1.0F, this.orbitStrength + ORBIT_RAMP_UP);
+        } else {
+            this.orbitStrength = Math.max(0.0F, this.orbitStrength - ORBIT_RAMP_DOWN);
+        }
+
+        if (this.orbitStrength <= 0.0F) {
+            this.orbitDirection = 0;
+            this.orbitCatchUp = 0.0;
+            return;
+        }
+
+        double tipX = tipX();
+        double tipZ = tipZ();
+        double radius = Math.sqrt(tipX * tipX + tipZ * tipZ);
+
+        double outX;
+        double outZ;
+        if (radius < 1.0E-4) {
+            float yaw = getFacingYaw() * Mth.DEG_TO_RAD;
+            outX = -Mth.sin(yaw);
+            outZ = Mth.cos(yaw);
+        } else {
+            outX = tipX / radius;
+            outZ = tipZ / radius;
+        }
+
+        double aroundX = -this.orbitDirection * outZ;
+        double aroundZ = this.orbitDirection * outX;
+        double radialSpeed = tipVelX() * outX + tipVelZ() * outZ;
+        double orbitSpeed = tipVelX() * aroundX + tipVelZ() * aroundZ;
+
+        double radiusError = ORBIT_RADIUS - radius;
+        this.orbitCatchUp = Mth.clamp(this.orbitCatchUp + ORBIT_RADIAL_CATCH_UP * this.orbitStrength * radiusError, -ORBIT_MAX_CATCH_UP, ORBIT_MAX_CATCH_UP);
+
+        double centripetal = (ORBIT_SPIN_RATE * ORBIT_SPIN_RATE - ORBIT_NATURAL_RATE * ORBIT_NATURAL_RATE) * radius;
+        double radialPull = ORBIT_RADIAL_STIFFNESS * radiusError - ORBIT_DAMPING * radialSpeed + this.orbitCatchUp - centripetal;
+        double orbitPush = ORBIT_DAMPING * (ORBIT_SPIN_RATE * ORBIT_RADIUS - orbitSpeed);
+
+        double scale = this.orbitStrength / TIP_ARM;
+        double swingX = scale * (outX * radialPull + aroundX * orbitPush);
+        double swingZ = scale * (outZ * radialPull + aroundZ * orbitPush);
+
+        this.chainVelX += swingX;
+        this.chainVelZ += swingZ;
+        this.tiltVelX += swingX;
+        this.tiltVelZ += swingZ;
+    }
+
     private void tickPendulum() {
+        applyOrbitDrive();
+
         double couplingX = TILT_RESTORING * Math.sin(this.chainX - this.tiltX);
         double couplingZ = TILT_RESTORING * Math.sin(this.chainZ - this.tiltZ);
 
@@ -319,7 +426,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             this.tiltVelZ = 0.0;
         }
 
-        if (isAtRest()) {
+        if (this.orbitStrength <= 0.0F && isAtRest()) {
             this.chainX = this.chainZ = this.tiltX = this.tiltZ = 0.0F;
             this.chainVelX = this.chainVelZ = this.tiltVelX = this.tiltVelZ = 0.0;
         }
@@ -465,7 +572,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             return InteractionResult.PASS;
         }
 
-        BlockHitResult hit = asBlockClick(bound, player);
+        BlockHitResult hit = toBlockHitResult(bound, player);
         ItemStack stack = player.getItemInHand(hand);
 
         ItemInteractionResult withItem = state.useItemOn(stack, level(), player, hand, hit);
@@ -485,7 +592,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         return stack.useOn(new UseOnContext(player, hand, hit));
     }
 
-    private static BlockHitResult asBlockClick(BlockPos pos, Player player) {
+    private static BlockHitResult toBlockHitResult(BlockPos pos, Player player) {
         Vec3 centre = Vec3.atCenterOf(pos);
         Direction face = Direction.getNearest(player.getEyePosition().subtract(centre));
 
@@ -508,10 +615,10 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         double towardsAnchorX = dx / length;
         double towardsAnchorZ = dz / length;
         applyImpulse(towardsAnchorX, towardsAnchorZ, contactY, WALK_SPECIFIC_IMPULSE);
-        strike(entity, -towardsAnchorX, -towardsAnchorZ, contactY);
+        applyContactHit(entity, -towardsAnchorX, -towardsAnchorZ, contactY);
     }
 
-    private void strike(Entity target, double normalX, double normalZ, double contactY) {
+    private void applyContactHit(Entity target, double normalX, double normalZ, double contactY) {
         if (!(target instanceof LivingEntity victim)) return;
 
         double belowShackle = shacklePos(this.chainX, this.chainZ).y - contactY;
@@ -544,7 +651,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     @Override
     public boolean skipAttackInteraction(Entity attacker) {
         if (!level().isClientSide() && !isRemoved() && attacker instanceof LivingEntity living) {
-            struckBy(living);
+            onHitByAttacker(living);
         }
 
         return true;
@@ -555,15 +662,15 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         if (level().isClientSide() || isRemoved()) return false;
 
         if (source.getDirectEntity() instanceof LivingEntity attacker) {
-            struckBy(attacker);
+            onHitByAttacker(attacker);
         } else if (source.getDirectEntity() instanceof Projectile projectile) {
-            struckBy(projectile);
+            onHitByProjectile(projectile);
         }
 
         return true;
     }
 
-    private void struckBy(Projectile projectile) {
+    private void onHitByProjectile(Projectile projectile) {
         Vec3 flight = projectile.getDeltaMovement();
         double speed = Math.sqrt(flight.x * flight.x + flight.z * flight.z);
         if (speed < 1.0E-4) return;
@@ -572,7 +679,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         playImpactSound(1.0F, false);
     }
 
-    private void struckBy(LivingEntity attacker) {
+    private void onHitByAttacker(LivingEntity attacker) {
         Vec3 look = attacker.getLookAngle();
         double length = Math.sqrt(look.x * look.x + look.z * look.z);
         if (length >= 1.0E-4) {
@@ -586,6 +693,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     private void applyImpulse(double dirX, double dirZ, double contactY, double specificImpulse) {
+        specificImpulse *= 1.0 - ORBIT_RESPONSE_LOSS * this.orbitStrength;
         double armFromCentre = shacklePos(this.chainX, this.chainZ).y - contactY - SHACKLE_TO_CENTRE;
         double tiltImpulse = specificImpulse * armFromCentre / GYRATION_RADIUS_SQ;
         double chainImpulse = (specificImpulse - SHACKLE_TO_CENTRE * tiltImpulse) / CHAIN_LENGTH;
@@ -661,6 +769,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         builder.define(DATA_TILT_VELOCITY_X, 0.0F);
         builder.define(DATA_TILT_VELOCITY_Z, 0.0F);
         builder.define(DATA_COLOR, UNDYED);
+        builder.define(DATA_ORBIT_DIRECTION, (byte) 0);
     }
 
     @Override

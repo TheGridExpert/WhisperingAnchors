@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
 
 public class HarkeningBellClientExtensions implements IClientItemExtensions {
 
-    public static final EnumProxy<HumanoidModel.ArmPose> RINGING_ARM_POSE = new EnumProxy<>(HumanoidModel.ArmPose.class, false, (IArmPoseTransformer) HarkeningBellClientExtensions::poseRingingArm);
+    public static final EnumProxy<HumanoidModel.ArmPose> RINGING_ARM_POSE = new EnumProxy<>(HumanoidModel.ArmPose.class, false, (IArmPoseTransformer) HarkeningBellClientExtensions::poseUsingArm);
 
     private static final float REST_SIDEWAYS = 0.56F;
     private static final float REST_UP = -0.52F;
@@ -66,7 +66,7 @@ public class HarkeningBellClientExtensions implements IClientItemExtensions {
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
         float used = Math.max(0.0F, itemInHand.getUseDuration(player) - (player.getUseItemRemainingTicks() - partialTick + 1.0F));
         float raise = smoothstep(Mth.clamp(used / RAISE_TICKS, 0.0F, 1.0F));
-        float swing = raise * ringAngle(used);
+        float swing = raise * bellSwingAngle(used);
 
         poseStack.translate(side * REST_SIDEWAYS, REST_UP + equipProcess * REST_EQUIP_DROP, REST_FORWARD);
 
@@ -88,20 +88,20 @@ public class HarkeningBellClientExtensions implements IClientItemExtensions {
         return ringing ? RINGING_ARM_POSE.getValue() : null;
     }
 
-    public static void swingHeldBell(LivingEntity holder, ItemStack stack, HumanoidArm arm, PoseStack poseStack) {
+    public static void applyBellSwingTransform(LivingEntity holder, ItemStack stack, HumanoidArm arm, PoseStack poseStack) {
         if (!holder.isUsingItem() || holder.getUseItem() != stack || !stack.is(ModItems.HARKENING_BELL.get())) return;
 
         float used = usedTicks(holder);
-        float swing = smoothstep(Mth.clamp(used / RAISE_TICKS, 0.0F, 1.0F)) * ringAngle(used);
+        float swing = smoothstep(Mth.clamp(used / RAISE_TICKS, 0.0F, 1.0F)) * bellSwingAngle(used);
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
 
         poseStack.rotateAround(Axis.ZP.rotationDegrees(side * swing * BELL_SWING_SCALE), 0.0F, -BELL_PIVOT_DROP / 16.0F, 0.0F);
     }
 
-    private static void poseRingingArm(HumanoidModel<?> model, LivingEntity entity, HumanoidArm arm) {
+    private static void poseUsingArm(HumanoidModel<?> model, LivingEntity entity, HumanoidArm arm) {
         float used = usedTicks(entity);
         float raise = smoothstep(Mth.clamp(used / RAISE_TICKS, 0.0F, 1.0F));
-        float swing = raise * ringAngle(used);
+        float swing = raise * bellSwingAngle(used);
 
         ModelPart limb = arm == HumanoidArm.RIGHT ? model.rightArm : model.leftArm;
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
@@ -111,7 +111,7 @@ public class HarkeningBellClientExtensions implements IClientItemExtensions {
         limb.zRot = Mth.lerp(raise, limb.zRot, side * (float) Math.toRadians(ARM_ROLL)) + side * (float) Math.toRadians(swing * ARM_SWING_SCALE);
     }
 
-    private static float ringAngle(float used) {
+    private static float bellSwingAngle(float used) {
         float seconds = used / TICKS_PER_SECOND;
 
         if (seconds <= RING_TIMES[0]) {
@@ -121,7 +121,7 @@ public class HarkeningBellClientExtensions implements IClientItemExtensions {
         for (int ring = 0; ring < RING_TIMES.length - 1; ring++) {
             if (seconds <= RING_TIMES[ring + 1]) {
                 float phase = (seconds - RING_TIMES[ring]) / (RING_TIMES[ring + 1] - RING_TIMES[ring]);
-                return RING_AMPLITUDE * edgeSide(ring) * Mth.cos((float) Math.PI * phase);
+                return RING_AMPLITUDE * swingDirection(ring) * Mth.cos((float) Math.PI * phase);
             }
         }
 
@@ -129,10 +129,10 @@ public class HarkeningBellClientExtensions implements IClientItemExtensions {
         float tail = Math.max(0.05F, HarkeningBellItem.USE_DURATION / TICKS_PER_SECOND - RING_TIMES[last]);
         float phase = Mth.clamp((seconds - RING_TIMES[last]) / tail, 0.0F, 1.0F);
 
-        return RING_AMPLITUDE * edgeSide(last) * (1.0F + Mth.cos((float) Math.PI * phase)) * 0.5F;
+        return RING_AMPLITUDE * swingDirection(last) * (1.0F + Mth.cos((float) Math.PI * phase)) * 0.5F;
     }
 
-    private static int edgeSide(int ring) {
+    private static int swingDirection(int ring) {
         return ring % 2 == 0 ? 1 : -1;
     }
 

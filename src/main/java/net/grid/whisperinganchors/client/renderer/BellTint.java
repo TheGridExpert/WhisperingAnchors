@@ -25,12 +25,12 @@ public final class BellTint {
         double blue = rgb & 0xFF;
         double luma = RED_LUMA * red + GREEN_LUMA * green + BLUE_LUMA * blue;
 
-        double lightness = MIDPOINT + spread(luma - MIDPOINT);
+        double lightness = MIDPOINT + compressLightness(luma - MIDPOINT);
 
         return OPAQUE | channel(red, luma, lightness) << 16 | channel(green, luma, lightness) << 8 | channel(blue, luma, lightness);
     }
 
-    private static double spread(double offset) {
+    private static double compressLightness(double offset) {
         double contrast = offset > 0.0 ? HIGHLIGHT_CONTRAST : CONTRAST;
         double range = offset > 0.0 ? HIGHLIGHT_RANGE : SHADOW_RANGE;
 

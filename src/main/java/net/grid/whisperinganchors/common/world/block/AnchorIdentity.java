@@ -21,12 +21,12 @@ public interface AnchorIdentity {
 
     void rename(Component name);
 
-    static @Nullable AnchorIdentity at(Level level, BlockPos top) {
-        if (ModConfig.staticAnchors()) {
+    static @Nullable AnchorIdentity find(Level level, BlockPos top) {
+        if (ModConfig.areAnchorsStatic()) {
             return level.getBlockEntity(top) instanceof WhisperingAnchorBlockEntity blockEntity ? blockEntity : null;
         }
 
-        List<AnchorEntity> anchors = AnchorEntity.boundTo(level, top);
+        List<AnchorEntity> anchors = AnchorEntity.findBoundTo(level, top);
 
         return anchors.isEmpty() ? null : anchors.getFirst();
     }

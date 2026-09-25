@@ -41,7 +41,7 @@ public class WhisperingAnchorRenderer implements BlockEntityRenderer<WhisperingA
     @Override
     public void render(WhisperingAnchorBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         Level level = blockEntity.getLevel();
-        if (level == null || !ModConfig.staticAnchors()) return;
+        if (level == null || !ModConfig.areAnchorsStatic()) return;
 
         BlockPos top = blockEntity.getBlockPos();
         Vec3 centreOfMass = AnchorEntity.restingCentreOfMass(top);

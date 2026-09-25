@@ -212,11 +212,11 @@ public class TraversalTowerStructure extends Structure {
         boolean captain = spawnRandom.nextFloat() < this.captainChance;
 
         for (int i = 0; i < pillagerCount && !floors.isEmpty(); i++) {
-            spawnRaider(level, EntityType.PILLAGER, takeSpot(floors, spawnRandom), captain && i == 0);
+            spawnRaider(level, EntityType.PILLAGER, removeRandom(floors, spawnRandom), captain && i == 0);
         }
 
         for (int i = 0; i < vindicatorCount && !floors.isEmpty(); i++) {
-            spawnRaider(level, EntityType.VINDICATOR, takeSpot(floors, spawnRandom), false);
+            spawnRaider(level, EntityType.VINDICATOR, removeRandom(floors, spawnRandom), false);
         }
     }
 
@@ -243,7 +243,7 @@ public class TraversalTowerStructure extends Structure {
         return floors;
     }
 
-    private static BlockPos takeSpot(List<BlockPos> floors, RandomSource random) {
+    private static BlockPos removeRandom(List<BlockPos> floors, RandomSource random) {
         return floors.remove(random.nextInt(floors.size()));
     }
 

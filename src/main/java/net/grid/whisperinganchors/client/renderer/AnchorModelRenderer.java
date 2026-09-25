@@ -62,7 +62,7 @@ public final class AnchorModelRenderer {
         for (AnchorPart part : AnchorPart.values()) {
             if (part == AnchorPart.TOP && !includeTop) continue;
 
-            SortedSet<BlockDestructionProgress> progress = destruction.get(top.below(part.belowTop()).asLong());
+            SortedSet<BlockDestructionProgress> progress = destruction.get(top.below(part.offsetFromTop()).asLong());
             if (progress != null && !progress.isEmpty()) {
                 stage = Math.max(stage, progress.last().getProgress());
             }

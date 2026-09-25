@@ -13,12 +13,12 @@ public class ModConfig {
         SERVER = serverPair.getLeft();
     }
 
-    public static boolean staticAnchors() {
+    public static boolean areAnchorsStatic() {
         return serverSpec.isLoaded() && SERVER.makeAnchorsStatic.get();
     }
 
-    public static boolean solidStaticAnchors() {
-        return staticAnchors() && SERVER.staticAnchorHitboxes.get();
+    public static boolean hasStaticAnchorHitboxes() {
+        return areAnchorsStatic() && SERVER.staticAnchorHitboxes.get();
     }
 
     public static class Server {

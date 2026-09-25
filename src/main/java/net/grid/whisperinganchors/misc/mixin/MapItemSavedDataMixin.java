@@ -99,7 +99,7 @@ public abstract class MapItemSavedDataMixin implements AnchorMarkerData {
 
             if (!(reader instanceof Level level)) continue;
 
-            AnchorIdentity anchor = AnchorIdentity.at(level, pos);
+            AnchorIdentity anchor = AnchorIdentity.find(level, pos);
             if (anchor == null) continue;
 
             AnchorMarker current = AnchorMarker.of(pos, anchor);
@@ -120,7 +120,7 @@ public abstract class MapItemSavedDataMixin implements AnchorMarkerData {
         if (mapX < -63.0 || mapZ < -63.0 || mapX > 63.0 || mapZ > 63.0) return false;
         if (!AnchorMarker.isAnchor(level, top)) return false;
 
-        AnchorMarker marker = AnchorMarker.of(top, AnchorIdentity.at(level, top));
+        AnchorMarker marker = AnchorMarker.of(top, AnchorIdentity.find(level, top));
         if (this.whisperingAnchors$anchorMarkers.remove(marker.getId()) != null) {
             removeDecoration(marker.getId());
             return true;

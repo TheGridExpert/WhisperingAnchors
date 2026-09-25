@@ -6,6 +6,9 @@ import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModItems;
 import net.grid.whisperinganchors.common.util.AnchorLanding;
+import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
+import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
+import net.grid.whisperinganchors.common.world.particle.HarkeningSoulParticleOption;
 import net.minecraft.ChatFormatting;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.minecraft.core.BlockPos;
@@ -13,6 +16,8 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -41,6 +46,15 @@ public class HarkeningBellItem extends Item {
     public static final int USE_DURATION = 160;
     public static final int USE_COOLDOWN = 80;
     public static final int USE_COOLDOWN_UNSUCCESSFUL = 20;
+
+    private static final float SOUL_SPIN = 0.18F;
+    private static final float RINGER_SOUL_RADIUS = 0.7F;
+    private static final float ANCHOR_SOUL_RADIUS = 1.0F;
+    private static final double RINGER_SOUL_SPREAD = 0.3;
+    private static final double ANCHOR_SOUL_DROP = 0.5;
+    private static final double ANCHOR_SOUL_SPREAD = 0.4;
+    private static final float MIN_SOULS_PER_TICK = 0.2F;
+    private static final float MAX_SOULS_PER_TICK = 1.0F;
 
     public HarkeningBellItem(Properties properties) {
         super(properties);
@@ -109,9 +123,49 @@ public class HarkeningBellItem extends Item {
 
     @Override
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
-        if (level.isClientSide && remainingUseDuration == USE_DURATION) {
-            HarkeningBellSoundInstance.startFor(livingEntity);
+        float progress = 1.0F - (float) remainingUseDuration / USE_DURATION;
+
+        if (level.isClientSide) {
+            if (remainingUseDuration == USE_DURATION) {
+                HarkeningBellSoundInstance.play(livingEntity);
+            }
+
+            HarkeningSoulParticleOption souls = new HarkeningSoulParticleOption(RINGER_SOUL_RADIUS, SOUL_SPIN);
+            for (int i = particleCountForTick(level.random, progress); i > 0; i--) {
+                level.addParticle(souls, livingEntity.getX(), livingEntity.getY() + level.random.nextDouble() * RINGER_SOUL_SPREAD, livingEntity.getZ(), 0.0, 0.0, 0.0);
+            }
+        } else if (level instanceof ServerLevel serverLevel) {
+            AnchorAttunement attunement = stack.get(ModDataComponents.ANCHOR_ATTUNEMENT);
+            if (attunement != null) {
+                tickTargetAnchor(serverLevel, attunement.anchorPos(), progress);
+            }
         }
+    }
+
+    private static void tickTargetAnchor(ServerLevel level, GlobalPos anchorPos, float progress) {
+        ServerLevel anchorLevel = level.getServer().getLevel(anchorPos.dimension());
+        BlockPos top = anchorPos.pos();
+        if (anchorLevel == null || !anchorLevel.isLoaded(top) || !(anchorLevel.getBlockEntity(top) instanceof WhisperingAnchorBlockEntity blockEntity)) return;
+
+        AnchorEntity anchor = blockEntity.getAnchor();
+        Vec3 centre = anchor == null ? AnchorEntity.restingCentreOfMass(top) : anchor.position();
+        int spin = 1;
+        if (anchor != null) {
+            anchor.refreshOrbitDrive();
+            spin = anchor.getOrbitDirection();
+        }
+
+        int count = particleCountForTick(anchorLevel.random, progress);
+        if (count > 0) {
+            anchorLevel.sendParticles(new HarkeningSoulParticleOption(ANCHOR_SOUL_RADIUS, spin * SOUL_SPIN), centre.x, centre.y - ANCHOR_SOUL_DROP, centre.z, count, 0.0, ANCHOR_SOUL_SPREAD, 0.0, 0.0);
+        }
+    }
+
+    private static int particleCountForTick(RandomSource random, float progress) {
+        float expected = Mth.lerp(1.0F - progress * progress, MIN_SOULS_PER_TICK, MAX_SOULS_PER_TICK);
+        int count = (int) expected;
+
+        return random.nextFloat() < expected - count ? count + 1 : count;
     }
 
     @Override

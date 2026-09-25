@@ -81,20 +81,20 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
     }
 
     public static BlockPos topOf(BlockPos pos, BlockState state) {
-        return pos.above(state.getValue(PART).belowTop());
+        return pos.above(state.getValue(PART).offsetFromTop());
     }
 
     private static VoxelShape restingBodyWithin(AnchorPart part) {
-        AABB body = AnchorEntity.restingBody(BlockPos.ZERO).move(0.0, part.belowTop(), 0.0);
+        AABB body = AnchorEntity.restingBody(BlockPos.ZERO).move(0.0, part.offsetFromTop(), 0.0);
         return Shapes.create(body.intersect(new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return switch (state.getValue(PART)) {
-            case TOP -> ModConfig.solidStaticAnchors() ? TOP_SHAPE : CHAIN_SHAPE;
-            case MIDDLE -> ModConfig.solidStaticAnchors() ? MIDDLE_SHAPE : Shapes.empty();
-            case BOTTOM -> ModConfig.solidStaticAnchors() ? BOTTOM_SHAPE : Shapes.empty();
+            case TOP -> ModConfig.hasStaticAnchorHitboxes() ? TOP_SHAPE : CHAIN_SHAPE;
+            case MIDDLE -> ModConfig.hasStaticAnchorHitboxes() ? MIDDLE_SHAPE : Shapes.empty();
+            case BOTTOM -> ModConfig.hasStaticAnchorHitboxes() ? BOTTOM_SHAPE : Shapes.empty();
         };
     }
 
@@ -106,11 +106,11 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         if (context.getClickedFace() == Direction.DOWN) {
-            return stateFor(context, AnchorPart.TOP);
+            return placementStateFor(context, AnchorPart.TOP);
         }
 
         for (AnchorPart part : PLACEMENT_ORDER) {
-            BlockState state = stateFor(context, part);
+            BlockState state = placementStateFor(context, part);
             if (state != null) {
                 return state;
             }
@@ -119,17 +119,17 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
         return null;
     }
 
-    private @Nullable BlockState stateFor(BlockPlaceContext context, AnchorPart clickedPart) {
-        BlockPos top = context.getClickedPos().above(clickedPart.belowTop());
-        if (!hasRoom(context, top) || !hasCeiling(context.getLevel(), top)) return null;
+    private @Nullable BlockState placementStateFor(BlockPlaceContext context, AnchorPart clickedPart) {
+        BlockPos top = context.getClickedPos().above(clickedPart.offsetFromTop());
+        if (!hasSpaceFor(context, top) || !hasCeiling(context.getLevel(), top)) return null;
 
         return defaultBlockState().setValue(PART, clickedPart).setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
-    private static boolean hasRoom(BlockPlaceContext context, BlockPos top) {
+    private static boolean hasSpaceFor(BlockPlaceContext context, BlockPos top) {
         Level level = context.getLevel();
         for (AnchorPart part : AnchorPart.values()) {
-            BlockPos target = top.below(part.belowTop());
+            BlockPos target = top.below(part.offsetFromTop());
 
             if (target.getY() < level.getMinBuildHeight() || target.getY() >= level.getMaxBuildHeight()) {
                 return false;
@@ -150,7 +150,7 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         BlockPos top = topOf(pos, state);
         for (AnchorPart part : AnchorPart.values()) {
-            BlockPos target = top.below(part.belowTop());
+            BlockPos target = top.below(part.offsetFromTop());
             if (!target.equals(pos)) {
                 level.setBlock(target, state.setValue(PART, part), Block.UPDATE_ALL);
             }
@@ -195,7 +195,7 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
     }
 
     private static ItemInteractionResult applyToAnchor(ItemStack stack, Level level, BlockPos top, Player player, Consumer<AnchorIdentity> action) {
-        AnchorIdentity anchor = AnchorIdentity.at(level, top);
+        AnchorIdentity anchor = AnchorIdentity.find(level, top);
         if (anchor == null) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
@@ -234,8 +234,8 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && state.getValue(PART) == AnchorPart.TOP && level instanceof ServerLevel serverLevel && ModConfig.staticAnchors()) {
-            AnchorEntity.crumble(serverLevel, AnchorEntity.restingBody(pos));
+        if (!state.is(newState.getBlock()) && state.getValue(PART) == AnchorPart.TOP && level instanceof ServerLevel serverLevel && ModConfig.areAnchorsStatic()) {
+            AnchorEntity.spawnCrumbleParticles(serverLevel, AnchorEntity.restingBody(pos));
         }
 
         super.onRemove(state, level, pos, newState, movedByPiston);
@@ -244,7 +244,7 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide && state.getValue(PART) != AnchorPart.BOTTOM && (player.isCreative() || !player.hasCorrectToolForDrops(state, level, pos))) {
-            BlockPos bottom = topOf(pos, state).below(AnchorPart.BOTTOM.belowTop());
+            BlockPos bottom = topOf(pos, state).below(AnchorPart.BOTTOM.offsetFromTop());
             if (isPart(level.getBlockState(bottom), AnchorPart.BOTTOM)) {
                 level.setBlock(bottom, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
                 level.levelEvent(player, LevelEvent.PARTICLES_DESTROY_BLOCK, bottom, Block.getId(state));

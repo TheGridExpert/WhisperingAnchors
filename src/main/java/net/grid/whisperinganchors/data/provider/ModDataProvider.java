@@ -51,6 +51,7 @@ public class ModDataProvider {
         ModTagsProvider.register(generator, packOutput, lookupProvider, event.getExistingFileHelper());
         ModModelsProvider.register(generator, packOutput, event.getExistingFileHelper(), event.includeClient());
         generator.addProvider(event.includeClient(), new ModSoundProvider(packOutput, event.getExistingFileHelper()));
+        generator.addProvider(true, new ModParticleDescriptionProvider(packOutput, event.getExistingFileHelper()));
         generator.addProvider(true, new ModGlobalLootModifierProvider(packOutput, lookupProvider));
         generator.addProvider(true, new LootTableProvider(packOutput, Set.of(), List.of(
                 new LootTableProvider.SubProviderEntry(ModBlockLootProvider::new, LootContextParamSets.BLOCK),

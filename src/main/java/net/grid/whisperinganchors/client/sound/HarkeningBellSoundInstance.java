@@ -27,11 +27,11 @@ public class HarkeningBellSoundInstance extends AbstractTickableSoundInstance {
         updatePosition();
     }
 
-    public static void startFor(LivingEntity ringer) {
+    public static void play(LivingEntity ringer) {
         Minecraft.getInstance().getSoundManager().play(new HarkeningBellSoundInstance(ringer));
     }
 
-    public static boolean isRinging(LivingEntity entity) {
+    public static boolean isUsingBell(LivingEntity entity) {
         return entity.isUsingItem() && entity.getUseItem().is(ModItems.HARKENING_BELL.get());
     }
 
@@ -42,7 +42,7 @@ public class HarkeningBellSoundInstance extends AbstractTickableSoundInstance {
             return;
         }
 
-        if (isRinging(ringer)) {
+        if (isUsingBell(ringer)) {
             this.finished = ringer.getTicksUsingItem() >= HarkeningBellItem.USE_DURATION - LATE_SYNC_TOLERANCE;
             updatePosition();
             return;

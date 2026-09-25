@@ -32,19 +32,23 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
         super(ModBlockEntities.WHISPERING_ANCHOR.get(), pos, state);
     }
 
-    public @Nullable AnchorIdentity identity() {
-        return ModConfig.staticAnchors() ? this : this.anchor;
+    public @Nullable AnchorEntity getAnchor() {
+        return this.anchor != null && this.anchor.isAlive() ? this.anchor : null;
+    }
+
+    public @Nullable AnchorIdentity getIdentity() {
+        return ModConfig.areAnchorsStatic() ? this : this.anchor;
     }
 
     public void clientTick() {
         if (this.level == null) return;
 
-        WhisperingAnchorSoundInstance.updatePlaying(this.level, this.worldPosition);
+        WhisperingAnchorSoundInstance.playIfAudible(this.level, this.worldPosition);
     }
 
     public void serverTick() {
         if (!(this.level instanceof ServerLevel serverLevel)) return;
-        if (ModConfig.staticAnchors()) return;
+        if (ModConfig.areAnchorsStatic()) return;
         if (this.anchor != null && this.anchor.isAlive() && this.anchor.isBoundTo(this.worldPosition)) return;
 
         AABB searchBox = AnchorEntity.searchArea(this.worldPosition);
@@ -54,7 +58,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
         if (this.anchor == null) {
             this.anchor = AnchorEntity.spawnFor(serverLevel, this.worldPosition);
             if (this.anchor != null) {
-                handOverTo(this.anchor);
+                transferIdentityTo(this.anchor);
             }
         }
     }
@@ -65,7 +69,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
     }
 
     private @Nullable AnchorEntity claimExistingAnchor(ServerLevel level) {
-        List<AnchorEntity> found = AnchorEntity.boundTo(level, this.worldPosition);
+        List<AnchorEntity> found = AnchorEntity.findBoundTo(level, this.worldPosition);
         if (found.isEmpty()) return null;
 
         for (int i = 1; i < found.size(); i++) {
@@ -75,7 +79,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
         return found.getFirst();
     }
 
-    private void handOverTo(AnchorEntity entity) {
+    private void transferIdentityTo(AnchorEntity entity) {
         if (this.color == null && this.customName == null) return;
 
         entity.setColor(this.color);
@@ -85,13 +89,13 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
 
         this.color = null;
         this.customName = null;
-        changed();
+        markChangedAndSync();
     }
 
-    public void adopt(AnchorEntity entity) {
+    public void copyIdentityFrom(AnchorEntity entity) {
         this.color = entity.getColor();
         this.customName = entity.getCustomName();
-        changed();
+        markChangedAndSync();
     }
 
     @Override
@@ -102,7 +106,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
     @Override
     public void setColor(@Nullable DyeColor color) {
         this.color = color;
-        changed();
+        markChangedAndSync();
     }
 
     @Override
@@ -113,10 +117,10 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
     @Override
     public void rename(Component name) {
         this.customName = name;
-        changed();
+        markChangedAndSync();
     }
 
-    private void changed() {
+    private void markChangedAndSync() {
         setChanged();
         if (this.level != null) {
             this.level.sendBlockUpdated(this.worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);

@@ -14,7 +14,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 public final class HarkeningBellEvents {
 
     @SubscribeEvent
-    public static void interruptRinging(LivingIncomingDamageEvent event) {
+    public static void cancelBellUseOnDamage(LivingIncomingDamageEvent event) {
         LivingEntity ringer = event.getEntity();
         if (ringer.level().isClientSide() || !ringer.isUsingItem() || !ringer.getUseItem().is(ModItems.HARKENING_BELL.get())) {
             return;

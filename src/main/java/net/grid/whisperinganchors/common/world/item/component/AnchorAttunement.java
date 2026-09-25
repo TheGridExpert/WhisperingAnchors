@@ -48,7 +48,7 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
 
     public static AnchorAttunement of(Level level, BlockPos pos, BlockState state) {
         BlockPos top = WhisperingAnchorBlock.topOf(pos, state);
-        AnchorIdentity anchor = AnchorIdentity.at(level, top);
+        AnchorIdentity anchor = AnchorIdentity.find(level, top);
 
         return new AnchorAttunement(GlobalPos.of(level.dimension(), top), anchor == null ? Optional.empty() : Optional.ofNullable(anchor.getCustomName()), anchor == null ? Optional.empty() : Optional.ofNullable(anchor.getColor()));
     }
@@ -73,7 +73,7 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
             return this;
         }
 
-        AnchorIdentity anchor = blockEntity.identity();
+        AnchorIdentity anchor = blockEntity.getIdentity();
         if (anchor == null) return this;
 
         Optional<Component> name = Optional.ofNullable(anchor.getCustomName());

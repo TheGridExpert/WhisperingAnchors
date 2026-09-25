@@ -42,7 +42,7 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
         updateSource(listener);
     }
 
-    public static void updatePlaying(Level level, BlockPos anchorPos) {
+    public static void playIfAudible(Level level, BlockPos anchorPos) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer listener = minecraft.player;
         if (listener == null || listener.level() != level) return;
@@ -98,7 +98,7 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
     private @Nullable AnchorEntity resolveAnchor() {
         if (this.anchor != null && this.anchor.isAlive() && this.anchor.isBoundTo(this.anchorPos)) return this.anchor;
 
-        List<AnchorEntity> found = AnchorEntity.boundTo(this.level, this.anchorPos);
+        List<AnchorEntity> found = AnchorEntity.findBoundTo(this.level, this.anchorPos);
         this.anchor = found.isEmpty() ? null : found.getFirst();
 
         return this.anchor;
@@ -114,7 +114,7 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
     }
 
     private static Vec3 restingPosition(BlockPos anchorPos) {
-        return Vec3.atCenterOf(anchorPos.below(AnchorPart.MIDDLE.belowTop()));
+        return Vec3.atCenterOf(anchorPos.below(AnchorPart.MIDDLE.offsetFromTop()));
     }
 
     private static float volumeAt(double distance) {

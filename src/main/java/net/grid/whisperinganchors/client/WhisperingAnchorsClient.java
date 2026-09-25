@@ -6,6 +6,7 @@ import net.grid.whisperinganchors.client.extension.WhisperingAnchorClientExtensi
 import net.grid.whisperinganchors.client.model.AnchorRenderSettings;
 import net.grid.whisperinganchors.client.model.FreeAngleModel;
 import net.grid.whisperinganchors.client.particle.AnchorCrumbleParticle;
+import net.grid.whisperinganchors.client.particle.HarkeningSoulParticle;
 import net.grid.whisperinganchors.client.renderer.BellTint;
 import net.grid.whisperinganchors.client.renderer.DyedGlint;
 import net.grid.whisperinganchors.client.renderer.blockentity.WhisperingAnchorRenderer;
@@ -67,6 +68,7 @@ public final class WhisperingAnchorsClient {
     @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
         event.registerSpecial(ModParticles.ANCHOR_CRUMBLE.get(), new AnchorCrumbleParticle.Provider());
+        event.registerSpriteSet(ModParticles.HARKENING_SOUL.get(), HarkeningSoulParticle.Provider::new);
     }
 
     @SubscribeEvent

@@ -9,15 +9,15 @@ public enum AnchorPart implements StringRepresentable {
     BOTTOM("bottom", 2);
 
     private final String name;
-    private final int belowTop;
+    private final int offsetFromTop;
 
-    AnchorPart(String name, int belowTop) {
+    AnchorPart(String name, int offsetFromTop) {
         this.name = name;
-        this.belowTop = belowTop;
+        this.offsetFromTop = offsetFromTop;
     }
 
-    public int belowTop() {
-        return this.belowTop;
+    public int offsetFromTop() {
+        return this.offsetFromTop;
     }
 
     public @Nullable AnchorPart above() {

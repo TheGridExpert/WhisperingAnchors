@@ -34,25 +34,25 @@ public final class AnchorNames {
     private static final long GOLDEN_RATIO = 0x9E3779B97F4A7C15L;
 
     public static Component generate(GlobalPos pos) {
-        RandomSource random = RandomSource.create(mix(pos.pos().asLong() ^ pos.dimension().location().hashCode() * GOLDEN_RATIO));
-        String stem = pick(random, STEMS);
-        String ending = pick(random, ENDINGS);
+        RandomSource random = RandomSource.create(mix64(pos.pos().asLong() ^ pos.dimension().location().hashCode() * GOLDEN_RATIO));
+        String stem = randomElement(random, STEMS);
+        String ending = randomElement(random, ENDINGS);
 
         if (stem.charAt(stem.length() - 1) == ending.charAt(0)) {
             ending = ending.substring(1);
         }
 
-        return Component.literal(stem + ending + " " + pick(random, EPITHETS));
+        return Component.literal(stem + ending + " " + randomElement(random, EPITHETS));
     }
 
-    private static long mix(long value) {
+    private static long mix64(long value) {
         value = (value ^ value >>> 33) * 0xFF51AFD7ED558CCDL;
         value = (value ^ value >>> 33) * 0xC4CEB9FE1A85EC53L;
 
         return value ^ value >>> 33;
     }
 
-    private static String pick(RandomSource random, List<String> words) {
+    private static String randomElement(RandomSource random, List<String> words) {
         return words.get(random.nextInt(words.size()));
     }
 }

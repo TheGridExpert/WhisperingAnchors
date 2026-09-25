@@ -74,7 +74,7 @@ public final class DyedGlint {
         return TRANSLUCENT.get(color);
     }
 
-    private static float swing(int channel, int rgb) {
+    private static float glintStrength(int channel, int rgb) {
         int peak = Math.max(rgb >> 16 & 0xFF, Math.max(rgb >> 8 & 0xFF, rgb & 0xFF));
         if (peak == 0) return 0.0F;
 
@@ -85,7 +85,7 @@ public final class DyedGlint {
         return (float) (Math.max(target, 0.0) / (GLINT_PEAK - GLINT_FLOOR));
     }
 
-    private static float offset(float swing) {
+    private static float glintOffset(float swing) {
         return (float) (GLINT_BRIGHTNESS - GLINT_NEUTRAL * swing);
     }
 
@@ -108,12 +108,12 @@ public final class DyedGlint {
 
     private static RenderStateShard.TexturingStateShard texturing(String name, DyeColor color) {
         int rgb = color.getTextureDiffuseColor();
-        float red = swing(rgb >> 16 & 0xFF, rgb);
-        float green = swing(rgb >> 8 & 0xFF, rgb);
-        float blue = swing(rgb & 0xFF, rgb);
-        float offsetRed = offset(red);
-        float offsetGreen = offset(green);
-        float offsetBlue = offset(blue);
+        float red = glintStrength(rgb >> 16 & 0xFF, rgb);
+        float green = glintStrength(rgb >> 8 & 0xFF, rgb);
+        float blue = glintStrength(rgb & 0xFF, rgb);
+        float offsetRed = glintOffset(red);
+        float offsetGreen = glintOffset(green);
+        float offsetBlue = glintOffset(blue);
 
         return new RenderStateShard.TexturingStateShard(name, () -> {
             long scroll = (long) ((double) Util.getMillis() * Minecraft.getInstance().options.glintSpeed().get() * GLINT_SCROLL_SPEED);

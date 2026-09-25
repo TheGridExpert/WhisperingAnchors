@@ -39,12 +39,12 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         Direction[] sides = { facing, facing.getClockWise(), facing.getCounterClockWise(), facing.getOpposite() };
 
         for (Direction side : sides) {
-            Optional<AnchorLanding> landing = landingAbove(level, top, top.relative(side, STAND_OFF), traveller);
+            Optional<AnchorLanding> landing = findLandingInColumn(level, top, top.relative(side, STAND_OFF), traveller);
             if (landing.isPresent()) return landing;
         }
 
         for (Vec3i offset : NEARBY_OFFSETS) {
-            Optional<AnchorLanding> landing = landingAbove(level, top, top.offset(offset), traveller);
+            Optional<AnchorLanding> landing = findLandingInColumn(level, top, top.offset(offset), traveller);
             if (landing.isPresent()) return landing;
         }
 
@@ -55,13 +55,13 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         return Optional.empty();
     }
 
-    private static Optional<AnchorLanding> landingAbove(ServerLevel level, BlockPos top, BlockPos column, LivingEntity traveller) {
+    private static Optional<AnchorLanding> findLandingInColumn(ServerLevel level, BlockPos top, BlockPos column, LivingEntity traveller) {
         int lowest = top.getY() - (WhisperingAnchorBlock.HEIGHT - 1) - MAX_DROP;
 
         for (int y = top.getY(); y >= lowest; y--) {
             Vec3 spot = standingSpot(level, column.atY(y), traveller);
             if (spot != null) {
-                return Optional.of(facingAnchor(top, spot, traveller));
+                return Optional.of(withRotationTowardsAnchor(top, spot, traveller));
             }
         }
 
@@ -77,14 +77,14 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         Vec3 position = new Vec3(feet.getX() + 0.5, support.getY() + floor.max(Direction.Axis.Y), feet.getZ() + 0.5);
         AABB room = traveller.getDimensions(traveller.getPose()).makeBoundingBox(position);
 
-        return level.noCollision(traveller, room) && !level.containsAnyLiquid(room) && !holdsAnythingUnsafe(level, room) ? position : null;
+        return level.noCollision(traveller, room) && !level.containsAnyLiquid(room) && !containsUnsafeBlocks(level, room) ? position : null;
     }
 
-    private static boolean holdsAnythingUnsafe(ServerLevel level, AABB room) {
+    private static boolean containsUnsafeBlocks(ServerLevel level, AABB room) {
         return level.getBlockStates(room).anyMatch(state -> state.is(ModBlockTags.UNSAFE_TELEPORTS));
     }
 
-    private static AnchorLanding facingAnchor(BlockPos top, Vec3 position, LivingEntity traveller) {
+    private static AnchorLanding withRotationTowardsAnchor(BlockPos top, Vec3 position, LivingEntity traveller) {
         Vec3 target = Vec3.atCenterOf(top.below());
 
         double dx = target.x - position.x;

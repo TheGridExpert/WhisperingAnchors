@@ -18,6 +18,6 @@ public class ItemInHandLayerMixin {
 
     @Inject(method = "renderArmWithItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;ZLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"))
     private void whisperingAnchors$swingRingingBell(LivingEntity livingEntity, ItemStack itemStack, ItemDisplayContext displayContext, HumanoidArm arm, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        HarkeningBellClientExtensions.swingHeldBell(livingEntity, itemStack, arm, poseStack);
+        HarkeningBellClientExtensions.applyBellSwingTransform(livingEntity, itemStack, arm, poseStack);
     }
 }
