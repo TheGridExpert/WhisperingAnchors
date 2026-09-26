@@ -16,6 +16,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -574,6 +575,14 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
 
         BlockHitResult hit = toBlockHitResult(bound, player);
         ItemStack stack = player.getItemInHand(hand);
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            if (!level().mayInteract(serverPlayer, bound)) {
+                return InteractionResult.FAIL;
+            }
+
+            return serverPlayer.gameMode.useItemOn(serverPlayer, level(), stack, hand, hit);
+        }
 
         ItemInteractionResult withItem = state.useItemOn(stack, level(), player, hand, hit);
         if (withItem.consumesAction()) return withItem.result();
