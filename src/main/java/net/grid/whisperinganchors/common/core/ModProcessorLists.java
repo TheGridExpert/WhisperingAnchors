@@ -30,7 +30,7 @@ public class ModProcessorLists {
     public static void bootstrap(BootstrapContext<StructureProcessorList> context) {
         context.register(TRAVERSAL_TOWER, new StructureProcessorList(List.of(
                 weathering(),
-                new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL), UniformInt.of(3, 5))
+                new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL), UniformInt.of(5, 7))
         )));
 
         context.register(TRAVERSAL_TOWER_UNDERGROUND, new StructureProcessorList(List.of(
