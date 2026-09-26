@@ -21,6 +21,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 import java.util.List;
@@ -43,15 +44,17 @@ public class ModDataProvider {
         DataGenerator generator = event.getGenerator();
         PackOutput packOutput = generator.getPackOutput();
         CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
+        ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
 
         DatapackBuiltinEntriesProvider provider = new DatapackBuiltinEntriesProvider(packOutput, lookupProvider, DATA_BUILDER, Set.of(WhisperingAnchors.MODID));
         lookupProvider = provider.getRegistryProvider();
         generator.addProvider(true, provider);
 
-        ModTagsProvider.register(generator, packOutput, lookupProvider, event.getExistingFileHelper());
-        ModModelsProvider.register(generator, packOutput, event.getExistingFileHelper(), event.includeClient());
-        generator.addProvider(event.includeClient(), new ModSoundProvider(packOutput, event.getExistingFileHelper()));
-        generator.addProvider(true, new ModParticleDescriptionProvider(packOutput, event.getExistingFileHelper()));
+        ModTagsProvider.register(generator, packOutput, lookupProvider, existingFileHelper);
+        ModModelsProvider.register(generator, packOutput, existingFileHelper, event.includeClient());
+        generator.addProvider(event.includeClient(), new ModSoundProvider(packOutput, existingFileHelper));
+        generator.addProvider(true, new ModParticleDescriptionProvider(packOutput, existingFileHelper));
+        generator.addProvider(true, new ModAdvancementProvider(packOutput, lookupProvider, existingFileHelper));
         generator.addProvider(true, new ModGlobalLootModifierProvider(packOutput, lookupProvider));
         generator.addProvider(true, new LootTableProvider(packOutput, Set.of(), List.of(
                 new LootTableProvider.SubProviderEntry(ModBlockLootProvider::new, LootContextParamSets.BLOCK),

@@ -1,0 +1,36 @@
+{
+  "parent": "whispering_anchors:adventure/find_traversal_tower",
+  "criteria": {
+    "get_hit": {
+      "conditions": {
+        "damage": {
+          "type": {
+            "source_entity": {
+              "type": "whispering_anchors:anchor"
+            }
+          }
+        }
+      },
+      "trigger": "minecraft:entity_hurt_player"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.whispering_anchors.get_hit_anchor.description"
+    },
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "whispering_anchors:whispering_anchor"
+    },
+    "title": {
+      "translate": "advancement.whispering_anchors.get_hit_anchor.title"
+    }
+  },
+  "requirements": [
+    [
+      "get_hit"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

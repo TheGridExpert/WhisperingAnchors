@@ -2,6 +2,7 @@ package net.grid.whisperinganchors.common.world.item;
 
 import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.client.sound.HarkeningBellSoundInstance;
+import net.grid.whisperinganchors.common.core.ModAdvancements;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModItems;
@@ -9,18 +10,24 @@ import net.grid.whisperinganchors.common.util.AnchorLanding;
 import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
 import net.grid.whisperinganchors.common.world.particle.HarkeningSoulParticleOption;
+import net.grid.whisperinganchors.misc.mixin.accessor.EndDragonFightAccessor;
+import net.grid.whisperinganchors.misc.mixin.accessor.LivingEntityAccessor;
 import net.minecraft.ChatFormatting;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -31,6 +38,8 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.dimension.end.EndDragonFight;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.Vec3;
 
@@ -198,6 +207,9 @@ public class HarkeningBellItem extends Item {
             livingEntity.stopRiding();
         }
 
+        boolean savedFromLethalFall = livingEntity instanceof ServerPlayer serverPlayer && isFallingToDeath(serverPlayer);
+        boolean dragonIsAlive = serverLevel.dimension() == Level.END && anchorLevel.dimension() != Level.END && isDragonAlive(serverLevel);
+
         AnchorLanding destination = landing.get();
         Entity arrived = livingEntity.changeDimension(new DimensionTransition(anchorLevel, destination.position(), Vec3.ZERO, destination.yRot(), destination.xRot(), DimensionTransition.DO_NOTHING));
         if (arrived == null) return stack;
@@ -205,9 +217,48 @@ public class HarkeningBellItem extends Item {
         arrived.resetFallDistance();
         if (arrived instanceof Player player) {
             player.getCooldowns().addCooldown(this, USE_COOLDOWN);
+
+            if (player instanceof ServerPlayer serverPlayer) {
+                ModAdvancements.HARKENED_TO_ANCHOR.get().trigger(serverPlayer, level.dimension(), savedFromLethalFall, dragonIsAlive);
+            }
         }
 
         return stack;
+    }
+
+    private static boolean isDragonAlive(ServerLevel level) {
+        EndDragonFight fight = level.getDragonFight();
+        return fight != null && fight.getDragonUUID() != null && !((EndDragonFightAccessor) fight).whispering_anchors$isDragonKilled();
+    }
+
+    private static boolean isFallingToDeath(ServerPlayer player) {
+        if (player.onGround() || player.getDeltaMovement().y >= 0.0 || player.isFallFlying() || player.getAbilities().flying || player.isInWater() || player.hasEffect(MobEffects.SLOW_FALLING)) {
+            return false;
+        }
+
+        Level level = player.level();
+        BlockPos.MutableBlockPos cursor = player.blockPosition().mutable();
+        while (true) {
+            if (cursor.getY() <= level.getMinBuildHeight()) {
+                return true;
+            }
+
+            BlockState state = level.getBlockState(cursor);
+            if (state.is(BlockTags.FALL_DAMAGE_RESETTING) || !level.getFluidState(cursor).isEmpty()) {
+                return false;
+            }
+
+            VoxelShape floor = state.getCollisionShape(level, cursor);
+            if (!floor.isEmpty() && cursor.getY() + floor.max(Direction.Axis.Y) <= player.getY()) {
+                float fallDistance = player.fallDistance + (float) (player.getY() - (cursor.getY() + floor.max(Direction.Axis.Y)));
+                LivingEntityAccessor accessor = (LivingEntityAccessor) player;
+                float damage = accessor.whispering_anchors$getDamageAfterMagicAbsorb(player.damageSources().fall(), accessor.whispering_anchors$calculateFallDamage(fallDistance, 1.0F));
+
+                return damage >= player.getHealth() + player.getAbsorptionAmount();
+            }
+
+            cursor.move(Direction.DOWN);
+        }
     }
 
     @Override

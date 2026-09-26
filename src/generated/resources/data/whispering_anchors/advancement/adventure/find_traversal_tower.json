@@ -1,0 +1,39 @@
+{
+  "parent": "minecraft:adventure/sleep_in_bed",
+  "criteria": {
+    "traversal_tower": {
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "structures": "whispering_anchors:traversal_tower"
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:location"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.whispering_anchors.find_traversal_tower.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "whispering_anchors:whispering_anchor"
+    },
+    "title": {
+      "translate": "advancement.whispering_anchors.find_traversal_tower.title"
+    }
+  },
+  "requirements": [
+    [
+      "traversal_tower"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

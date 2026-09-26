@@ -1,0 +1,29 @@
+{
+  "parent": "minecraft:end/root",
+  "criteria": {
+    "harken": {
+      "conditions": {
+        "dragon_is_alive": true
+      },
+      "trigger": "whispering_anchors:harkened_to_anchor"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.whispering_anchors.harken_from_alive_dragon.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "whispering_anchors:harkening_bell"
+    },
+    "title": {
+      "translate": "advancement.whispering_anchors.harken_from_alive_dragon.title"
+    }
+  },
+  "requirements": [
+    [
+      "harken"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

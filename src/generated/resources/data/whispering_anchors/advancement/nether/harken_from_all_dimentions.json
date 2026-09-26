@@ -1,0 +1,48 @@
+{
+  "parent": "minecraft:nether/use_lodestone",
+  "criteria": {
+    "harken_end": {
+      "conditions": {
+        "dimension": "minecraft:the_end"
+      },
+      "trigger": "whispering_anchors:harkened_to_anchor"
+    },
+    "harken_nether": {
+      "conditions": {
+        "dimension": "minecraft:the_nether"
+      },
+      "trigger": "whispering_anchors:harkened_to_anchor"
+    },
+    "harken_overworld": {
+      "conditions": {
+        "dimension": "minecraft:overworld"
+      },
+      "trigger": "whispering_anchors:harkened_to_anchor"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.whispering_anchors.harken_from_all_dimentions.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "whispering_anchors:harkening_bell"
+    },
+    "title": {
+      "translate": "advancement.whispering_anchors.harken_from_all_dimentions.title"
+    }
+  },
+  "requirements": [
+    [
+      "harken_overworld"
+    ],
+    [
+      "harken_nether"
+    ],
+    [
+      "harken_end"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -27,6 +27,19 @@
 
   "filled_map.whispering_anchors.traversal_tower": "Traversal Tower Map",
 
+  "advancement.whispering_anchors.find_traversal_tower.title": "Shiver Me Timbers!",
+  "advancement.whispering_anchors.find_traversal_tower.description": "Follow the whispers to a Traversal Tower",
+  "advancement.whispering_anchors.get_hit_anchor.title": "Dead Weight",
+  "advancement.whispering_anchors.get_hit_anchor.description": "Learn the hard way that a swinging anchor swings back",
+  "advancement.whispering_anchors.harken_to_anchor.title": "Saved by the Bell",
+  "advancement.whispering_anchors.harken_to_anchor.description": "Ring an attuned Harkening Bell and be pulled back to its anchor",
+  "advancement.whispering_anchors.harken_from_falling.title": "Not Today, Gravity",
+  "advancement.whispering_anchors.harken_from_falling.description": "Use a Harkening Bell to save yourself from a lethal fall",
+  "advancement.whispering_anchors.harken_from_all_dimentions.title": "Jingle All the Way",
+  "advancement.whispering_anchors.harken_from_all_dimentions.description": "Answer an anchor's call from the Overworld, the Nether and the End",
+  "advancement.whispering_anchors.harken_from_alive_dragon.title": "French Leave",
+  "advancement.whispering_anchors.harken_from_alive_dragon.description": "Flee from the End with a Harkening Bell with the dragon still alive",
+
   "message.whispering_anchors.anchor_obstructed": "The whispers of the anchor cannot be harkened: it's obstructed",
 
   "tooltip.whispering_anchors.harkening_bell.attuned": "Attuned to [%s]",

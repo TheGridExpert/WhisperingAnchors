@@ -1,0 +1,26 @@
+{
+  "parent": "whispering_anchors:adventure/find_traversal_tower",
+  "criteria": {
+    "harken": {
+      "trigger": "whispering_anchors:harkened_to_anchor"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.whispering_anchors.harken_to_anchor.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "whispering_anchors:harkening_bell"
+    },
+    "title": {
+      "translate": "advancement.whispering_anchors.harken_to_anchor.title"
+    }
+  },
+  "requirements": [
+    [
+      "harken"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
