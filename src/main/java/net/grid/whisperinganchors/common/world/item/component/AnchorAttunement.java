@@ -59,10 +59,9 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
         return this.anchorColor.<Component>map(color -> name.copy().withStyle(style -> style.withColor(color.getTextColor()))).orElse(name);
     }
 
-    public @Nullable AnchorAttunement tick(ServerLevel level) {
-        if (this.anchorPos.dimension() != level.dimension()) {
-            return this;
-        }
+    public @Nullable AnchorAttunement tick(ServerLevel holderLevel) {
+        ServerLevel level = holderLevel.getServer().getLevel(this.anchorPos.dimension());
+        if (level == null) return this;
 
         BlockPos pos = this.anchorPos.pos();
         if (!level.isInWorldBounds(pos) || !level.getPoiManager().existsAtPosition(ModPoiTypes.WHISPERING_ANCHOR.getKey(), pos)) {
