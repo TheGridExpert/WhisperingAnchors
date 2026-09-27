@@ -44,6 +44,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class WhisperingAnchorBlock extends Block implements EntityBlock {
 
@@ -168,7 +169,7 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
             return renameAnchor(stack, level, top, player);
         }
         if (stack.getItem() instanceof DyeItem dye) {
-            return applyToAnchor(stack, level, top, player, anchor -> anchor.setColor(dye.getDyeColor()));
+            return applyToAnchor(stack, level, top, player, anchor -> anchor.getColor() != dye.getDyeColor(), anchor -> anchor.setColor(dye.getDyeColor()));
         }
 
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -191,12 +192,12 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
-        return applyToAnchor(stack, level, top, player, anchor -> anchor.rename(name));
+        return applyToAnchor(stack, level, top, player, anchor -> !name.equals(anchor.getCustomName()), anchor -> anchor.rename(name));
     }
 
-    private static ItemInteractionResult applyToAnchor(ItemStack stack, Level level, BlockPos top, Player player, Consumer<AnchorIdentity> action) {
+    private static ItemInteractionResult applyToAnchor(ItemStack stack, Level level, BlockPos top, Player player, Predicate<AnchorIdentity> changes, Consumer<AnchorIdentity> action) {
         AnchorIdentity anchor = AnchorIdentity.find(level, top);
-        if (anchor == null) {
+        if (anchor == null || !changes.test(anchor)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
