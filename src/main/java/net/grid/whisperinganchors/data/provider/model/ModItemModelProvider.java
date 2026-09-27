@@ -29,9 +29,9 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     private void harkeningBell() {
-        ItemModelBuilder attuned = bell("harkening_bell_attuned", "harkening_bell_colorless");
+        ItemModelBuilder attuned = bell("harkening_bell_attuned", "harkening_bell");
 
-        ItemModelBuilder ringing = bell("harkening_bell_ringing", "harkening_bell_colorless");
+        ItemModelBuilder ringing = bell("harkening_bell_ringing", "harkening_bell");
         ringing.transforms()
                 .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
                 .translation(RINGING_OFFSET_X, RINGING_OFFSET_Y, RINGING_OFFSET_Z)
@@ -42,6 +42,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         bell(BuiltInRegistries.ITEM.getKey(ModItems.HARKENING_BELL.get()).getPath(), "harkening_bell")
                 .override().predicate(HarkeningBellItem.ATTUNED_PROPERTY, 1.0F).model(attuned).end()
                 .override().predicate(HarkeningBellItem.ATTUNED_PROPERTY, 1.0F).predicate(HarkeningBellItem.RINGING_PROPERTY, 1.0F).model(ringing).end();
+
+        bell("harkening_bell_overlay", "harkening_bell_overlay");
     }
 
     private ItemModelBuilder bell(String name, String texture) {

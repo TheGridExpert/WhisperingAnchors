@@ -7,14 +7,12 @@ import net.grid.whisperinganchors.client.model.AnchorRenderSettings;
 import net.grid.whisperinganchors.client.model.FreeAngleModel;
 import net.grid.whisperinganchors.client.particle.AnchorCrumbleParticle;
 import net.grid.whisperinganchors.client.particle.HarkeningSoulParticle;
-import net.grid.whisperinganchors.client.renderer.BellTint;
-import net.grid.whisperinganchors.client.renderer.DyedGlint;
+import net.grid.whisperinganchors.client.renderer.BellGlint;
+import net.grid.whisperinganchors.client.renderer.BellOverlay;
 import net.grid.whisperinganchors.client.renderer.blockentity.WhisperingAnchorRenderer;
 import net.grid.whisperinganchors.client.renderer.entity.AnchorEntityRenderer;
 import net.grid.whisperinganchors.common.core.ModBlockEntities;
 import net.grid.whisperinganchors.common.core.ModBlocks;
-import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
-import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.grid.whisperinganchors.common.core.ModEntities;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModItems;
@@ -23,7 +21,6 @@ import net.grid.whisperinganchors.common.world.item.HarkeningBellItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -31,7 +28,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
-import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.event.RegisterRenderBuffersEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
@@ -48,6 +44,7 @@ public final class WhisperingAnchorsClient {
     @SubscribeEvent
     public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
         event.register(ANCHOR_CHAIN_MODEL);
+        event.register(BellOverlay.MODEL);
     }
 
     @SubscribeEvent
@@ -72,19 +69,9 @@ public final class WhisperingAnchorsClient {
     }
 
     @SubscribeEvent
-    public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
-        event.register((stack, tintIndex) -> {
-            if (tintIndex != 0) return AnchorEntity.UNDYED;
-
-            DyeColor color = AnchorAttunement.colorOf(stack);
-
-            return color == null ? AnchorEntity.UNDYED : BellTint.of(color);
-        }, ModItems.HARKENING_BELL.get());
-    }
-
-    @SubscribeEvent
     public static void registerRenderBuffers(RegisterRenderBuffersEvent event) {
-        DyedGlint.registerBuffers(event);
+        event.registerRenderBuffer(BellGlint.RENDER_TYPE);
+        event.registerRenderBuffer(BellOverlay.RENDER_TYPE);
     }
 
     @SubscribeEvent

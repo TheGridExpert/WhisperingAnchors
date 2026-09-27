@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "whispering_anchors:item/harkening_bell_colorless"
+    "layer0": "whispering_anchors:item/harkening_bell"
   }
 }

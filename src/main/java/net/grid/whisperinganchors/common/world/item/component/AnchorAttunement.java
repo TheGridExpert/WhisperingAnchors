@@ -2,7 +2,6 @@ package net.grid.whisperinganchors.common.world.item.component;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModPoiTypes;
 import net.grid.whisperinganchors.common.util.AnchorNames;
 import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
@@ -17,7 +16,6 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -40,11 +38,6 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
             ByteBufCodecs.optional(DyeColor.STREAM_CODEC), AnchorAttunement::anchorColor,
             AnchorAttunement::new
     );
-
-    public static @Nullable DyeColor colorOf(ItemStack stack) {
-        AnchorAttunement attunement = stack.get(ModDataComponents.ANCHOR_ATTUNEMENT);
-        return attunement == null ? null : attunement.anchorColor().orElse(DEFAULT_COLOR);
-    }
 
     public static AnchorAttunement of(Level level, BlockPos pos, BlockState state) {
         BlockPos top = WhisperingAnchorBlock.topOf(pos, state);
