@@ -13,6 +13,7 @@
     "min_inclusive": 5
   },
   "scan_step": 10,
+  "search_radius": 2,
   "spawn_floors": "whispering_anchors:traversal_tower_floors",
   "spawn_overrides": {},
   "start_pool": "whispering_anchors:traversal_tower",

@@ -58,6 +58,7 @@ public class TraversalTowerStructure extends Structure {
             Codec.intRange(1, 512).fieldOf("scan_step").forGetter(structure -> structure.scanStep),
             Codec.intRange(1, 128).fieldOf("footprint").forGetter(structure -> structure.footprint),
             Codec.intRange(0, 128).fieldOf("max_terrain_difference").forGetter(structure -> structure.maxTerrainDifference),
+            Codec.intRange(0, 4).fieldOf("search_radius").forGetter(structure -> structure.searchRadius),
             IntProvider.codec(0, 32).fieldOf("pillagers").forGetter(structure -> structure.pillagers),
             IntProvider.codec(0, 32).fieldOf("vindicators").forGetter(structure -> structure.vindicators),
             Codec.floatRange(0.0F, 1.0F).fieldOf("captain_chance").forGetter(structure -> structure.captainChance),
@@ -73,12 +74,13 @@ public class TraversalTowerStructure extends Structure {
     private final int scanStep;
     private final int footprint;
     private final int maxTerrainDifference;
+    private final int searchRadius;
     private final IntProvider pillagers;
     private final IntProvider vindicators;
     private final float captainChance;
     private final TagKey<Block> spawnFloors;
 
-    public TraversalTowerStructure(StructureSettings settings, Holder<StructureTemplatePool> startPool, int groundLevel, int minScanY, int maxScanY, int scanStep, int footprint, int maxTerrainDifference, IntProvider pillagers, IntProvider vindicators, float captainChance, TagKey<Block> spawnFloors) {
+    public TraversalTowerStructure(StructureSettings settings, Holder<StructureTemplatePool> startPool, int groundLevel, int minScanY, int maxScanY, int scanStep, int footprint, int maxTerrainDifference, int searchRadius, IntProvider pillagers, IntProvider vindicators, float captainChance, TagKey<Block> spawnFloors) {
         super(settings);
         this.startPool = startPool;
         this.groundLevel = groundLevel;
@@ -87,6 +89,7 @@ public class TraversalTowerStructure extends Structure {
         this.scanStep = scanStep;
         this.footprint = footprint;
         this.maxTerrainDifference = maxTerrainDifference;
+        this.searchRadius = searchRadius;
         this.pillagers = pillagers;
         this.vindicators = vindicators;
         this.captainChance = captainChance;
@@ -95,16 +98,32 @@ public class TraversalTowerStructure extends Structure {
 
     @Override
     public Optional<GenerationStub> findValidGenerationPoint(GenerationContext context) {
-        return coversBiomeBelow(context) ? this.findGenerationPoint(context) : Optional.empty();
+        return findSite(context).flatMap(chunkPos -> createStub(context, chunkPos));
     }
 
     @Override
     public Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
-        ChunkPos chunkPos = context.chunkPos();
-        if (!isBuildableSurface(context, chunkPos.getMiddleBlockX(), chunkPos.getMiddleBlockZ())) {
-            return Optional.empty();
+        return isBuildableSurface(context, context.chunkPos()) ? createStub(context, context.chunkPos()) : Optional.empty();
+    }
+
+    private Optional<ChunkPos> findSite(GenerationContext context) {
+        ChunkPos center = context.chunkPos();
+
+        for (int ring = 0; ring <= this.searchRadius; ring++) {
+            for (int x = -ring; x <= ring; x++) {
+                for (int z = -ring; z <= ring; z++) {
+                    if (Math.abs(x) != ring && Math.abs(z) != ring) continue;
+
+                    ChunkPos chunkPos = new ChunkPos(center.x + x, center.z + z);
+                    if (coversBiomeBelow(context, chunkPos) && isBuildableSurface(context, chunkPos)) return Optional.of(chunkPos);
+                }
+            }
         }
 
+        return Optional.empty();
+    }
+
+    private Optional<GenerationStub> createStub(GenerationContext context, ChunkPos chunkPos) {
         WorldgenRandom random = context.random();
         Rotation rotation = Rotation.getRandom(random);
         StructurePoolElement element = this.startPool.value().getRandomTemplate(random);
@@ -164,11 +183,11 @@ public class TraversalTowerStructure extends Structure {
         return false;
     }
 
-    private boolean coversBiomeBelow(GenerationContext context) {
+    private boolean coversBiomeBelow(GenerationContext context, ChunkPos chunkPos) {
         BiomeSource source = context.chunkGenerator().getBiomeSource();
         Climate.Sampler sampler = context.randomState().sampler();
-        int quartX = QuartPos.fromBlock(context.chunkPos().getMiddleBlockX());
-        int quartZ = QuartPos.fromBlock(context.chunkPos().getMiddleBlockZ());
+        int quartX = QuartPos.fromBlock(chunkPos.getMiddleBlockX());
+        int quartZ = QuartPos.fromBlock(chunkPos.getMiddleBlockZ());
 
         for (int y = this.minScanY; y <= this.maxScanY; y += this.scanStep) {
             if (context.validBiome().test(source.getNoiseBiome(quartX, QuartPos.fromBlock(y), quartZ, sampler))) return true;
@@ -177,8 +196,10 @@ public class TraversalTowerStructure extends Structure {
         return false;
     }
 
-    private boolean isBuildableSurface(GenerationContext context, int x, int z) {
+    private boolean isBuildableSurface(GenerationContext context, ChunkPos chunkPos) {
         ChunkGenerator generator = context.chunkGenerator();
+        int x = chunkPos.getMiddleBlockX();
+        int z = chunkPos.getMiddleBlockZ();
         int step = Math.max(this.footprint / 2, 1);
         int lowest = Integer.MAX_VALUE;
         int highest = Integer.MIN_VALUE;

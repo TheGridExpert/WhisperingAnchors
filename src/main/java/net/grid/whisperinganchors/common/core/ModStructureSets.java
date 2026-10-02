@@ -19,7 +19,7 @@ public class ModStructureSets {
 
         context.register(TRAVERSAL_TOWERS, new StructureSet(
                 structures.getOrThrow(ModStructures.TRAVERSAL_TOWER),
-                new RandomSpreadStructurePlacement(24, 16, RandomSpreadType.LINEAR, 1274903)
+                new RandomSpreadStructurePlacement(32, 26, RandomSpreadType.LINEAR, 1274903)
         ));
     }
 

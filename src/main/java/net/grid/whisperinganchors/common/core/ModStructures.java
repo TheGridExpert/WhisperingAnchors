@@ -30,7 +30,7 @@ public class ModStructures {
                         .build(),
                 pools.getOrThrow(ModTemplatePools.TRAVERSAL_TOWER),
                 0,
-                -55, -15, 10, 13, 10,
+                -55, -15, 10, 13, 10, 2,
                 UniformInt.of(5, 8), UniformInt.of(0, 2), 0.5F, ModBlockTags.TRAVERSAL_TOWER_FLOORS
         ));
     }
