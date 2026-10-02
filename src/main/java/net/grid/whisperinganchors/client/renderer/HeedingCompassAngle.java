@@ -7,10 +7,12 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
@@ -19,7 +21,7 @@ public class HeedingCompassAngle extends CompassItemPropertyFunction {
 
     private static final long TRANSITION_MILLIS = 750L;
 
-    private final Map<Object, Transition[]> transitions = new WeakHashMap<>();
+    private final Map<Object, Map<Object, Transition>> transitions = new WeakHashMap<>();
 
     public HeedingCompassAngle() {
         super((level, stack, entity) -> getTarget(stack));
@@ -30,13 +32,10 @@ public class HeedingCompassAngle extends CompassItemPropertyFunction {
         float angle = super.unclampedCall(stack, level, entity, seed);
 
         Object owner = entity != null ? entity : stack.getEntityRepresentation() != null ? stack.getEntityRepresentation() : stack;
-        int slot = entity == null ? 0 : entity.getMainHandItem() == stack ? 1 : entity.getOffhandItem() == stack ? 2 : 0;
-        Transition[] slots = this.transitions.computeIfAbsent(owner, key -> new Transition[3]);
-        if (slots[slot] == null) {
-            slots[slot] = new Transition(getTarget(stack), angle);
-        }
+        Object slot = entity == null ? seed : entity.getMainHandItem() == stack ? InteractionHand.MAIN_HAND : entity.getOffhandItem() == stack ? InteractionHand.OFF_HAND : seed;
+        Transition transition = this.transitions.computeIfAbsent(owner, key -> new HashMap<>()).computeIfAbsent(slot, key -> new Transition(getTarget(stack), angle));
 
-        return slots[slot].update(getTarget(stack), angle, Util.getMillis());
+        return transition.update(getTarget(stack), angle, Util.getMillis());
     }
 
     private static @Nullable GlobalPos getTarget(ItemStack stack) {
