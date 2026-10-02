@@ -44,8 +44,11 @@
   "message.whispering_anchors.anchor_obstructed": "The whispers of the anchor cannot be harkened: it's obstructed",
 
   "tooltip.whispering_anchors.harkening_bell.attuned": "Attuned to [%s]",
-  "tooltip.whispering_anchors.heeding_compass.known_anchors": "Known Anchors:",
-  "tooltip.whispering_anchors.heeding_compass.known_anchor": " [%s]",
+  "tooltip.whispering_anchors.heeding_compass.known_anchors": "Nearest Known Anchors:",
+  "tooltip.whispering_anchors.heeding_compass.known_anchor": " [%s] %s",
+  "tooltip.whispering_anchors.heeding_compass.known_anchor.meters": "%sm",
+  "tooltip.whispering_anchors.heeding_compass.known_anchor.kilometers": "%skm",
+  "tooltip.whispering_anchors.heeding_compass.more_known_anchors": " ...and %s more",
 
   "subtitles.whispering_anchors.harkening_bell_ringing": "Harkening Bell rings",
   "subtitles.whispering_anchors.whispers": "Whispers",
