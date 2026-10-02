@@ -25,7 +25,7 @@ public class ModMapDecorations {
         }
     }
 
-    public static DeferredHolder<MapDecorationType, MapDecorationType> anchor(DyeColor color) {
+    public static DeferredHolder<MapDecorationType, MapDecorationType> getAnchor(DyeColor color) {
         return DYED_ANCHORS.get(color);
     }
 

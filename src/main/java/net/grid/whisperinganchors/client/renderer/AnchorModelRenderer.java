@@ -35,7 +35,7 @@ public final class AnchorModelRenderer {
 
     public static void renderChain(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int destroyStage) {
         AnchorRenderSettings offsets = AnchorRenderSettings.current();
-        BakedModel link = model(WhisperingAnchorsClient.ANCHOR_CHAIN_MODEL);
+        BakedModel link = getModel(WhisperingAnchorsClient.ANCHOR_CHAIN_MODEL);
         int links = Math.max(1, Mth.ceil(AnchorEntity.CHAIN_LENGTH / offsets.chainLinkSpacing()));
 
         for (int i = 0; i < links; i++) {
@@ -50,11 +50,11 @@ public final class AnchorModelRenderer {
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(-facingYaw));
         poseStack.translate(-0.5, -AnchorRenderSettings.current().shackleHeight(), -0.5);
-        renderModel(model(WhisperingAnchorsClient.ANCHOR_BODY_MODEL), poseStack, bufferSource, packedLight, destroyStage);
+        renderModel(getModel(WhisperingAnchorsClient.ANCHOR_BODY_MODEL), poseStack, bufferSource, packedLight, destroyStage);
         poseStack.popPose();
     }
 
-    public static int destroyStageOf(BlockPos top, boolean includeTop) {
+    public static int getDestroyStage(BlockPos top, boolean includeTop) {
         Long2ObjectMap<SortedSet<BlockDestructionProgress>> destruction = ((LevelRendererAccessor) Minecraft.getInstance().levelRenderer).getDestructionProgress();
         if (destruction.isEmpty()) return INTACT;
 
@@ -71,7 +71,7 @@ public final class AnchorModelRenderer {
         return stage;
     }
 
-    private static BakedModel model(ModelResourceLocation location) {
+    private static BakedModel getModel(ModelResourceLocation location) {
         return Minecraft.getInstance().getModelManager().getModel(location);
     }
 

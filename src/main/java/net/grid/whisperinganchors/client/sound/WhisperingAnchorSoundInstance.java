@@ -56,7 +56,7 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
             PLAYING.remove(anchorPos, playing);
         }
 
-        if (volumeAt(listener.getEyePosition().distanceTo(restingPosition(anchorPos))) <= 0.0F) {
+        if (calculateVolumeAt(listener.getEyePosition().distanceTo(getRestingPosition(anchorPos))) <= 0.0F) {
             return;
         }
 
@@ -79,20 +79,20 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
     }
 
     private double updateSource(LocalPlayer listener) {
-        Vec3 position = sourcePosition();
+        Vec3 position = getSourcePosition();
         this.x = position.x;
         this.y = position.y;
         this.z = position.z;
 
         double distance = listener.getEyePosition().distanceTo(position);
-        this.volume = volumeAt(distance);
+        this.volume = calculateVolumeAt(distance);
 
         return distance;
     }
 
-    private Vec3 sourcePosition() {
+    private Vec3 getSourcePosition() {
         AnchorEntity resolved = resolveAnchor();
-        return resolved == null ? restingPosition(this.anchorPos) : resolved.position();
+        return resolved == null ? getRestingPosition(this.anchorPos) : resolved.position();
     }
 
     private @Nullable AnchorEntity resolveAnchor() {
@@ -113,11 +113,11 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
         stop();
     }
 
-    private static Vec3 restingPosition(BlockPos anchorPos) {
+    private static Vec3 getRestingPosition(BlockPos anchorPos) {
         return Vec3.atCenterOf(anchorPos.below(AnchorPart.MIDDLE.offsetFromTop()));
     }
 
-    private static float volumeAt(double distance) {
+    private static float calculateVolumeAt(double distance) {
         double falloff = Mth.clamp(1.0 - distance / AUDIBLE_RANGE, 0.0, 1.0);
         return (float) (MAX_VOLUME * falloff * falloff * falloff);
     }

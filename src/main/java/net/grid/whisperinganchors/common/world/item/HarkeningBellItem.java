@@ -133,7 +133,7 @@ public class HarkeningBellItem extends AttunableItem {
         if (anchorLevel == null || !anchorLevel.isLoaded(top) || !(anchorLevel.getBlockEntity(top) instanceof WhisperingAnchorBlockEntity blockEntity)) return;
 
         AnchorEntity anchor = blockEntity.getAnchor();
-        Vec3 centre = anchor == null ? AnchorEntity.restingCentreOfMass(top) : anchor.position();
+        Vec3 centre = anchor == null ? AnchorEntity.getRestingCentreOfMass(top) : anchor.position();
         int spin = 1;
         if (anchor != null) {
             anchor.refreshOrbitDrive();
@@ -241,7 +241,7 @@ public class HarkeningBellItem extends AttunableItem {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         AnchorAttunement attunement = stack.get(ModDataComponents.ANCHOR_ATTUNEMENT);
         if (attunement != null) {
-            tooltipComponents.add(Component.translatable("tooltip.whispering_anchors.harkening_bell.attuned", attunement.name()).withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.translatable("tooltip.whispering_anchors.harkening_bell.attuned", attunement.getDisplayName()).withStyle(ChatFormatting.GRAY));
         }
 
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);

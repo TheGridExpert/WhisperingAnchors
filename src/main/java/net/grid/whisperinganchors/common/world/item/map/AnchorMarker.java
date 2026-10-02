@@ -42,7 +42,7 @@ public record AnchorMarker(BlockPos pos, Optional<DyeColor> color, Optional<Comp
     }
 
     public Holder<MapDecorationType> getDecoration() {
-        return this.color.<Holder<MapDecorationType>>map(ModMapDecorations::anchor).orElse(ModMapDecorations.ANCHOR);
+        return this.color.<Holder<MapDecorationType>>map(ModMapDecorations::getAnchor).orElse(ModMapDecorations.ANCHOR);
     }
 
     public String getId() {

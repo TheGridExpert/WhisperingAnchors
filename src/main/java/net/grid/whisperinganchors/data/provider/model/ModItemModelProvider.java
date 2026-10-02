@@ -32,9 +32,9 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     private void harkeningBell() {
-        ItemModelBuilder attuned = bell("harkening_bell_attuned", "harkening_bell");
+        ItemModelBuilder attuned = flatModel("harkening_bell_attuned", "harkening_bell");
 
-        ItemModelBuilder ringing = bell("harkening_bell_ringing", "harkening_bell");
+        ItemModelBuilder ringing = flatModel("harkening_bell_ringing", "harkening_bell");
         ringing.transforms()
                 .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
                 .translation(0.0F, -6.75F, 1.0F)
@@ -42,26 +42,22 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .end()
                 .end();
 
-        bell(BuiltInRegistries.ITEM.getKey(ModItems.HARKENING_BELL.get()).getPath(), "harkening_bell")
+        flatModel(BuiltInRegistries.ITEM.getKey(ModItems.HARKENING_BELL.get()).getPath(), "harkening_bell")
                 .override().predicate(HarkeningBellItem.ATTUNED_PROPERTY, 1.0F).model(attuned).end()
                 .override().predicate(HarkeningBellItem.ATTUNED_PROPERTY, 1.0F).predicate(HarkeningBellItem.RINGING_PROPERTY, 1.0F).model(ringing).end();
 
-        bell("harkening_bell_overlay", "harkening_bell_overlay");
-    }
-
-    private ItemModelBuilder bell(String name, String texture) {
-        return withExistingParent(name, mcLoc("item/generated")).texture("layer0", modLoc("item/" + texture));
+        flatModel("harkening_bell_overlay", "harkening_bell_overlay");
     }
 
     private void compass(ItemLike item) {
         String name = BuiltInRegistries.ITEM.getKey(item.asItem()).getPath();
         ItemModelBuilder[] frames = new ItemModelBuilder[COMPASS_FRAMES];
-        frames[COMPASS_FRAMES / 2] = bell(name, name + String.format(Locale.ROOT, "_%02d", COMPASS_FRAMES / 2));
+        frames[COMPASS_FRAMES / 2] = flatModel(name, name + String.format(Locale.ROOT, "_%02d", COMPASS_FRAMES / 2));
 
         for (int i = 0; i < COMPASS_FRAMES; i++) {
             if (i != COMPASS_FRAMES / 2) {
                 String indexedName = name + String.format(Locale.ROOT, "_%02d", i);
-                frames[i] = bell(indexedName, indexedName);
+                frames[i] = flatModel(indexedName, indexedName);
             }
         }
 
@@ -71,5 +67,9 @@ public class ModItemModelProvider extends ItemModelProvider {
             base.override().predicate(COMPASS_ANGLE, (i - 0.5F) / COMPASS_FRAMES).model(frames[(i + COMPASS_FRAMES / 2) % COMPASS_FRAMES]).end();
         }
         base.override().predicate(COMPASS_ANGLE, 1.0F - 0.5F / COMPASS_FRAMES).model(base).end();
+    }
+
+    private ItemModelBuilder flatModel(String name, String texture) {
+        return withExistingParent(name, mcLoc("item/generated")).texture("layer0", modLoc("item/" + texture));
     }
 }

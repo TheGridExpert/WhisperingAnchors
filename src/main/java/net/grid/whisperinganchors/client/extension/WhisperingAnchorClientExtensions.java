@@ -25,9 +25,9 @@ public class WhisperingAnchorClientExtensions implements IClientBlockExtensions 
     @Override
     public boolean addHitEffects(BlockState state, Level level, HitResult target, ParticleEngine manager) {
         if (target instanceof BlockHitResult hit) {
-            BlockPos top = WhisperingAnchorBlock.topOf(hit.getBlockPos(), state);
+            BlockPos top = WhisperingAnchorBlock.getTopPos(hit.getBlockPos(), state);
             if (ModConfig.areAnchorsStatic()) {
-                spawnCrumbParticles(AnchorEntity.restingBody(top), level.getRandom(), manager);
+                spawnCrumbParticles(AnchorEntity.getRestingBody(top), level.getRandom(), manager);
             } else {
                 for (AnchorEntity anchor : AnchorEntity.findBoundTo(level, top)) {
                     spawnCrumbParticles(anchor.getBoundingBox(), anchor.getRandom(), manager);
@@ -40,7 +40,7 @@ public class WhisperingAnchorClientExtensions implements IClientBlockExtensions 
 
     private static void spawnCrumbParticles(AABB body, RandomSource random, ParticleEngine manager) {
         for (int crumb = 0; crumb < CRUMBS_PER_HIT; crumb++) {
-            Vec3 point = AnchorEntity.randomPointIn(body, random);
+            Vec3 point = AnchorEntity.pickRandomPointIn(body, random);
             Particle particle = manager.createParticle(ModParticles.ANCHOR_CRUMBLE.get(), point.x, point.y, point.z, 0.0, 0.0, 0.0);
             if (particle != null) {
                 particle.setPower(CRUMB_POWER).scale(CRUMB_SCALE);

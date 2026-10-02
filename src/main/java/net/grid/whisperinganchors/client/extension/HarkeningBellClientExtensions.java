@@ -50,9 +50,9 @@ public class HarkeningBellClientExtensions extends UseAnimationClientExtensions 
 
     @Override
     protected void transformFirstPerson(PoseStack poseStack, HumanoidArm arm, float used) {
-        int side = side(arm);
-        float raise = raiseProgress(used, RAISE_TICKS);
-        float swing = raise * bellSwingAngle(used);
+        int side = getSideSign(arm);
+        float raise = calculateRaiseProgress(used, RAISE_TICKS);
+        float swing = raise * calculateBellSwingAngle(used);
 
         poseStack.translate(side * RAISE_SIDEWAYS * raise, RAISE_UP * raise, RAISE_FORWARD * raise);
 
@@ -66,9 +66,9 @@ public class HarkeningBellClientExtensions extends UseAnimationClientExtensions 
 
     @Override
     protected void transformThirdPerson(PoseStack poseStack, HumanoidArm arm, float used) {
-        float swing = raiseProgress(used, RAISE_TICKS) * bellSwingAngle(used);
+        float swing = calculateRaiseProgress(used, RAISE_TICKS) * calculateBellSwingAngle(used);
 
-        poseStack.rotateAround(Axis.ZP.rotationDegrees(side(arm) * swing * BELL_SWING_SCALE), 0.0F, -BELL_PIVOT_DROP / 16.0F, 0.0F);
+        poseStack.rotateAround(Axis.ZP.rotationDegrees(getSideSign(arm) * swing * BELL_SWING_SCALE), 0.0F, -BELL_PIVOT_DROP / 16.0F, 0.0F);
     }
 
     @Override
@@ -78,19 +78,19 @@ public class HarkeningBellClientExtensions extends UseAnimationClientExtensions 
     }
 
     private static void poseUsingArm(HumanoidModel<?> model, LivingEntity entity, HumanoidArm arm) {
-        float used = usedTicks(entity);
-        float raise = raiseProgress(used, RAISE_TICKS);
-        float swing = raise * bellSwingAngle(used);
+        float used = getUsedTicks(entity);
+        float raise = calculateRaiseProgress(used, RAISE_TICKS);
+        float swing = raise * calculateBellSwingAngle(used);
 
         ModelPart limb = arm == HumanoidArm.RIGHT ? model.rightArm : model.leftArm;
-        int side = side(arm);
+        int side = getSideSign(arm);
 
         limb.xRot = Mth.lerp(raise, limb.xRot, (float) Math.toRadians(ARM_PITCH));
         limb.yRot = Mth.lerp(raise, limb.yRot, side * (float) Math.toRadians(ARM_YAW));
         limb.zRot = Mth.lerp(raise, limb.zRot, side * (float) Math.toRadians(ARM_ROLL)) + side * (float) Math.toRadians(swing * ARM_SWING_SCALE);
     }
 
-    private static float bellSwingAngle(float used) {
+    private static float calculateBellSwingAngle(float used) {
         float seconds = used / TICKS_PER_SECOND;
 
         if (seconds <= RING_TIMES[0]) {
@@ -100,7 +100,7 @@ public class HarkeningBellClientExtensions extends UseAnimationClientExtensions 
         for (int ring = 0; ring < RING_TIMES.length - 1; ring++) {
             if (seconds <= RING_TIMES[ring + 1]) {
                 float phase = (seconds - RING_TIMES[ring]) / (RING_TIMES[ring + 1] - RING_TIMES[ring]);
-                return RING_AMPLITUDE * swingDirection(ring) * Mth.cos((float) Math.PI * phase);
+                return RING_AMPLITUDE * getSwingDirection(ring) * Mth.cos((float) Math.PI * phase);
             }
         }
 
@@ -108,10 +108,10 @@ public class HarkeningBellClientExtensions extends UseAnimationClientExtensions 
         float tail = Math.max(0.05F, HarkeningBellItem.USE_DURATION / TICKS_PER_SECOND - RING_TIMES[last]);
         float phase = Mth.clamp((seconds - RING_TIMES[last]) / tail, 0.0F, 1.0F);
 
-        return RING_AMPLITUDE * swingDirection(last) * (1.0F + Mth.cos((float) Math.PI * phase)) * 0.5F;
+        return RING_AMPLITUDE * getSwingDirection(last) * (1.0F + Mth.cos((float) Math.PI * phase)) * 0.5F;
     }
 
-    private static int swingDirection(int ring) {
+    private static int getSwingDirection(int ring) {
         return ring % 2 == 0 ? 1 : -1;
     }
 }

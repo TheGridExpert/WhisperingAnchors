@@ -47,10 +47,10 @@ public class RadialFadeProcessor extends StructureProcessor {
             return relativeBlockInfo;
         }
 
-        return random.nextFloat() < this.survivalChance(blockInfo.pos()) ? relativeBlockInfo : null;
+        return random.nextFloat() < calculateSurvivalChance(blockInfo.pos()) ? relativeBlockInfo : null;
     }
 
-    private float survivalChance(BlockPos localPos) {
+    private float calculateSurvivalChance(BlockPos localPos) {
         if (this.outerRadius <= this.innerRadius) return 1.0F;
 
         float dx = localPos.getX() - this.centerX;

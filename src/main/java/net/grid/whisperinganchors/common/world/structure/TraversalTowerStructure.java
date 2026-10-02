@@ -95,13 +95,13 @@ public class TraversalTowerStructure extends Structure {
 
     @Override
     public Optional<GenerationStub> findValidGenerationPoint(GenerationContext context) {
-        return this.coversBiomeBelow(context) ? this.findGenerationPoint(context) : Optional.empty();
+        return coversBiomeBelow(context) ? this.findGenerationPoint(context) : Optional.empty();
     }
 
     @Override
     public Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
         ChunkPos chunkPos = context.chunkPos();
-        if (!this.isBuildableSurface(context, chunkPos.getMiddleBlockX(), chunkPos.getMiddleBlockZ())) {
+        if (!isBuildableSurface(context, chunkPos.getMiddleBlockX(), chunkPos.getMiddleBlockZ())) {
             return Optional.empty();
         }
 
@@ -122,7 +122,7 @@ public class TraversalTowerStructure extends Structure {
 
         return Optional.of(new GenerationStub(new BlockPos(chunkPos.getMiddleBlockX(), surface, chunkPos.getMiddleBlockZ()), builder -> {
             builder.addPiece(piece);
-            this.addAttachedPieces(context, builder, piece);
+            addAttachedPieces(context, builder, piece);
         }));
     }
 
@@ -203,7 +203,7 @@ public class TraversalTowerStructure extends Structure {
         BlockPos center = structureBox.getCenter();
         if (SectionPos.blockToSectionCoord(center.getX()) != chunkPos.x || SectionPos.blockToSectionCoord(center.getZ()) != chunkPos.z) return;
 
-        List<BlockPos> floors = this.findSpawnFloors(level, structureBox, chunkPos);
+        List<BlockPos> floors = findSpawnFloors(level, structureBox, chunkPos);
         if (floors.isEmpty()) return;
 
         RandomSource spawnRandom = RandomSource.create(level.getSeed()).forkPositional().at(center);

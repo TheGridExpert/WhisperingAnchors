@@ -20,21 +20,21 @@ public class HeedingCompassClientExtensions extends UseAnimationClientExtensions
 
     @Override
     protected void transformFirstPerson(PoseStack poseStack, HumanoidArm arm, float used) {
-        int side = side(arm);
-        float raise = raiseProgress(used, RAISE_TICKS);
+        int side = getSideSign(arm);
+        float raise = calculateRaiseProgress(used, RAISE_TICKS);
         float pivotY = arm == HumanoidArm.RIGHT ? RIGHT_HAND_PIVOT_Y : LEFT_HAND_PIVOT_Y;
 
         poseStack.translate(side * RAISE_SIDEWAYS * raise, RAISE_UP * raise, 0.0F);
         poseStack.mulPose(Axis.XP.rotationDegrees(RAISE_PITCH * raise));
-        poseStack.rotateAround(Axis.ZP.rotationDegrees(raise * shakeAngle(used)), side * PIVOT_X, pivotY, 0.0F);
+        poseStack.rotateAround(Axis.ZP.rotationDegrees(raise * calculateShakeAngle(used)), side * PIVOT_X, pivotY, 0.0F);
     }
 
     @Override
     protected void transformThirdPerson(PoseStack poseStack, HumanoidArm arm, float used) {
-        poseStack.mulPose(Axis.ZP.rotationDegrees(raiseProgress(used, RAISE_TICKS) * shakeAngle(used)));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(calculateRaiseProgress(used, RAISE_TICKS) * calculateShakeAngle(used)));
     }
 
-    private static float shakeAngle(float used) {
+    private static float calculateShakeAngle(float used) {
         float phase = Mth.frac(used / SHAKE_PERIOD + 0.25F);
         return SHAKE_AMPLITUDE * (1.0F - 4.0F * Math.abs(phase - 0.5F));
     }

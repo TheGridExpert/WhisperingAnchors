@@ -27,9 +27,9 @@ public class AnchorEntityRenderer extends EntityRenderer<AnchorEntity> {
         double originY = Mth.lerp(partialTick, entity.yOld, entity.getY());
         double originZ = Mth.lerp(partialTick, entity.zOld, entity.getZ());
         Vec3 suspension = entity.getSuspensionPoint();
-        Vec3 shackle = entity.shacklePos(chainX, chainZ);
+        Vec3 shackle = entity.getShacklePos(chainX, chainZ);
 
-        int destroyStage = AnchorModelRenderer.destroyStageOf(entity.getBoundPos(), true);
+        int destroyStage = AnchorModelRenderer.getDestroyStage(entity.getBoundPos(), true);
 
         poseStack.pushPose();
         poseStack.translate(suspension.x - originX, suspension.y - originY, suspension.z - originZ);

@@ -51,7 +51,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
         if (ModConfig.areAnchorsStatic()) return;
         if (this.anchor != null && this.anchor.isAlive() && this.anchor.isBoundTo(this.worldPosition)) return;
 
-        AABB searchBox = AnchorEntity.searchArea(this.worldPosition);
+        AABB searchBox = AnchorEntity.getSearchArea(this.worldPosition);
         if (!checkIfAreaIsLoaded(searchBox, serverLevel)) return;
 
         this.anchor = claimExistingAnchor(serverLevel);

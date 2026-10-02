@@ -207,7 +207,7 @@ public class HeedingCompassItem extends AttunableItem {
             StructurePlaceSettings settings = new StructurePlaceSettings().setRotation(poolPiece.getRotation());
 
             for (StructureTemplate.StructureBlockInfo info : template.filterBlocks(poolPiece.getPosition(), settings, ModBlocks.WHISPERING_ANCHOR.get())) {
-                BlockPos top = WhisperingAnchorBlock.topOf(info.pos(), info.state());
+                BlockPos top = WhisperingAnchorBlock.getTopPos(info.pos(), info.state());
                 if (known.contains(top) || level.isLoaded(top) && !level.getBlockState(top).is(ModBlocks.WHISPERING_ANCHOR)) continue;
 
                 if (closest == null || horizontalDistSqr(top, origin) < horizontalDistSqr(closest, origin)) {
@@ -237,7 +237,7 @@ public class HeedingCompassItem extends AttunableItem {
             tooltipComponents.add(Component.empty());
             tooltipComponents.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchors").withStyle(ChatFormatting.GRAY));
             for (AnchorAttunement anchor : knownAnchors.anchors()) {
-                tooltipComponents.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor", anchor.name()).withStyle(ChatFormatting.GRAY));
+                tooltipComponents.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor", anchor.getDisplayName()).withStyle(ChatFormatting.GRAY));
             }
         }
 

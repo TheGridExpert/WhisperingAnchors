@@ -166,7 +166,7 @@ public final class FreeAngleModel {
 
             Matrix4f matrix = new Matrix4f().translate(ox, oy, oz);
             if (this.rescale && isSingleAxis()) {
-                float scale = 1.0F / (float) Math.cos(dominantAngle() * DEGREES_TO_RADIANS);
+                float scale = 1.0F / (float) Math.cos(getDominantAngle() * DEGREES_TO_RADIANS);
                 matrix.scale(this.x == 0.0F ? scale : 1.0F, this.y == 0.0F ? scale : 1.0F, this.z == 0.0F ? scale : 1.0F);
             }
 
@@ -179,7 +179,7 @@ public final class FreeAngleModel {
         boolean isVanillaLegal() {
             if (!isSingleAxis()) return false;
 
-            float angle = Math.abs(dominantAngle());
+            float angle = Math.abs(getDominantAngle());
 
             return angle == 22.5F || angle == 45.0F;
         }
@@ -189,7 +189,7 @@ public final class FreeAngleModel {
             return axes == 1;
         }
 
-        private float dominantAngle() {
+        private float getDominantAngle() {
             float angle = Math.abs(this.x) >= Math.abs(this.y) ? this.x : this.y;
             return Math.abs(angle) >= Math.abs(this.z) ? angle : this.z;
         }

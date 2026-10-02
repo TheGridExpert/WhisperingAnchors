@@ -40,13 +40,13 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
     );
 
     public static AnchorAttunement of(Level level, BlockPos pos, BlockState state) {
-        BlockPos top = WhisperingAnchorBlock.topOf(pos, state);
+        BlockPos top = WhisperingAnchorBlock.getTopPos(pos, state);
         AnchorIdentity anchor = AnchorIdentity.find(level, top);
 
         return new AnchorAttunement(GlobalPos.of(level.dimension(), top), anchor == null ? Optional.empty() : Optional.ofNullable(anchor.getCustomName()), anchor == null ? Optional.empty() : Optional.ofNullable(anchor.getColor()));
     }
 
-    public Component name() {
+    public Component getDisplayName() {
         Component name = this.anchorName.orElseGet(() -> AnchorNames.generate(this.anchorPos));
 
         return this.anchorColor.<Component>map(color -> name.copy().withStyle(style -> style.withColor(color.getTextColor()))).orElse(name);

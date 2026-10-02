@@ -28,13 +28,13 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
     private static final int MAX_DROP = 4;
     private static final int NEARBY_RADIUS = 4;
 
-    private static final List<Vec3i> NEARBY_OFFSETS = nearbyOffsets();
+    private static final List<Vec3i> NEARBY_OFFSETS = createNearbyOffsets();
 
     public static Optional<AnchorLanding> find(ServerLevel level, BlockPos anchorPos, LivingEntity traveller) {
         BlockState state = level.getBlockState(anchorPos);
         if (!(state.getBlock() instanceof WhisperingAnchorBlock)) return Optional.empty();
 
-        BlockPos top = WhisperingAnchorBlock.topOf(anchorPos, state);
+        BlockPos top = WhisperingAnchorBlock.getTopPos(anchorPos, state);
         Direction facing = state.getValue(WhisperingAnchorBlock.FACING);
         Direction[] sides = { facing, facing.getClockWise(), facing.getCounterClockWise(), facing.getOpposite() };
 
@@ -59,7 +59,7 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         int lowest = top.getY() - (WhisperingAnchorBlock.HEIGHT - 1) - MAX_DROP;
 
         for (int y = top.getY(); y >= lowest; y--) {
-            Vec3 spot = standingSpot(level, column.atY(y), traveller);
+            Vec3 spot = findStandingSpot(level, column.atY(y), traveller);
             if (spot != null) {
                 return Optional.of(withRotationTowardsAnchor(top, spot, traveller));
             }
@@ -68,7 +68,7 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         return Optional.empty();
     }
 
-    private static @Nullable Vec3 standingSpot(ServerLevel level, BlockPos feet, LivingEntity traveller) {
+    private static @Nullable Vec3 findStandingSpot(ServerLevel level, BlockPos feet, LivingEntity traveller) {
         BlockPos support = feet.below();
         BlockState floorState = level.getBlockState(support);
         VoxelShape floor = floorState.getCollisionShape(level, support);
@@ -98,7 +98,7 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         return new AnchorLanding(position, yRot, xRot);
     }
 
-    private static List<Vec3i> nearbyOffsets() {
+    private static List<Vec3i> createNearbyOffsets() {
         List<Vec3i> offsets = new ArrayList<>();
 
         for (int x = -NEARBY_RADIUS; x <= NEARBY_RADIUS; x++) {

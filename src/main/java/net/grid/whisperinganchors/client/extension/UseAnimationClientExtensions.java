@@ -22,7 +22,7 @@ public abstract class UseAnimationClientExtensions implements IClientItemExtensi
             return false;
         }
 
-        poseStack.translate(side(arm) * REST_SIDEWAYS, REST_UP + equipProcess * REST_EQUIP_DROP, REST_FORWARD);
+        poseStack.translate(getSideSign(arm) * REST_SIDEWAYS, REST_UP + equipProcess * REST_EQUIP_DROP, REST_FORWARD);
         transformFirstPerson(poseStack, arm, player.getTicksUsingItem() + partialTick);
 
         return true;
@@ -30,7 +30,7 @@ public abstract class UseAnimationClientExtensions implements IClientItemExtensi
 
     public static void transformHeldItem(LivingEntity holder, ItemStack stack, HumanoidArm arm, PoseStack poseStack) {
         if (holder.isUsingItem() && holder.getUseItem() == stack && IClientItemExtensions.of(stack) instanceof UseAnimationClientExtensions extensions) {
-            extensions.transformThirdPerson(poseStack, arm, usedTicks(holder));
+            extensions.transformThirdPerson(poseStack, arm, getUsedTicks(holder));
         }
     }
 
@@ -38,16 +38,16 @@ public abstract class UseAnimationClientExtensions implements IClientItemExtensi
 
     protected abstract void transformThirdPerson(PoseStack poseStack, HumanoidArm arm, float used);
 
-    protected static float usedTicks(LivingEntity entity) {
+    protected static float getUsedTicks(LivingEntity entity) {
         return entity.getTicksUsingItem() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
     }
 
-    protected static float raiseProgress(float used, float raiseTicks) {
+    protected static float calculateRaiseProgress(float used, float raiseTicks) {
         float t = Mth.clamp(used / raiseTicks, 0.0F, 1.0F);
         return t * t * (3.0F - 2.0F * t);
     }
 
-    protected static int side(HumanoidArm arm) {
+    protected static int getSideSign(HumanoidArm arm) {
         return arm == HumanoidArm.RIGHT ? 1 : -1;
     }
 }

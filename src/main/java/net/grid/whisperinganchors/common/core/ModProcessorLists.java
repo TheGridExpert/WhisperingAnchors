@@ -30,15 +30,15 @@ public class ModProcessorLists {
     public static void bootstrap(BootstrapContext<StructureProcessorList> context) {
         context.register(TRAVERSAL_TOWER, new StructureProcessorList(List.of(
                 weathering(),
-                new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL), UniformInt.of(5, 7))
+                new CappedProcessor(createBuriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL), UniformInt.of(5, 7))
         )));
 
         context.register(TRAVERSAL_TOWER_UNDERGROUND, new StructureProcessorList(List.of(
                 new RadialFadeProcessor(new BlockMatchTest(Blocks.GRAVEL), 5, 5, 4.0F, 7.0F),
                 weathering(),
-                new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GUARANTEED), ConstantInt.of(1)),
-                new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_RARE), ConstantInt.of(1)),
-                new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL), UniformInt.of(24, 48))
+                new CappedProcessor(createBuriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GUARANTEED), ConstantInt.of(1)),
+                new CappedProcessor(createBuriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_RARE), ConstantInt.of(1)),
+                new CappedProcessor(createBuriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL), UniformInt.of(24, 48))
         )));
     }
 
@@ -52,7 +52,7 @@ public class ModProcessorLists {
         ));
     }
 
-    private static RuleProcessor buriedLoot(ResourceKey<LootTable> lootTable) {
+    private static RuleProcessor createBuriedLoot(ResourceKey<LootTable> lootTable) {
         return new RuleProcessor(List.of(new ProcessorRule(new BlockMatchTest(Blocks.GRAVEL), AlwaysTrueTest.INSTANCE, PosAlwaysTrueTest.INSTANCE, Blocks.SUSPICIOUS_GRAVEL.defaultBlockState(), new AppendLoot(lootTable))));
     }
 

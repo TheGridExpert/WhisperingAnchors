@@ -44,9 +44,9 @@ public class WhisperingAnchorRenderer implements BlockEntityRenderer<WhisperingA
         if (level == null || !ModConfig.areAnchorsStatic()) return;
 
         BlockPos top = blockEntity.getBlockPos();
-        Vec3 centreOfMass = AnchorEntity.restingCentreOfMass(top);
+        Vec3 centreOfMass = AnchorEntity.getRestingCentreOfMass(top);
         int light = LevelRenderer.getLightColor(level, BlockPos.containing(centreOfMass));
-        int destroyStage = AnchorModelRenderer.destroyStageOf(top, false);
+        int destroyStage = AnchorModelRenderer.getDestroyStage(top, false);
         float facingYaw = blockEntity.getBlockState().getValue(WhisperingAnchorBlock.FACING).toYRot();
 
         double suspensionY = 1.0 - AnchorEntity.FIXED_CHAIN_LENGTH;
@@ -63,11 +63,11 @@ public class WhisperingAnchorRenderer implements BlockEntityRenderer<WhisperingA
 
         Component name = blockEntity.getCustomName();
         if (name != null) {
-            renderNameTag(displayName(name, blockEntity.getColor()), centreOfMass, top, poseStack, bufferSource, light);
+            renderNameTag(colorDisplayName(name, blockEntity.getColor()), centreOfMass, top, poseStack, bufferSource, light);
         }
     }
 
-    private static Component displayName(Component name, @Nullable DyeColor color) {
+    private static Component colorDisplayName(Component name, @Nullable DyeColor color) {
         return color == null ? name : name.copy().withStyle(style -> style.withColor(color.getTextColor()));
     }
 
