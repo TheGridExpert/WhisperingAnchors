@@ -107,13 +107,9 @@ public class HeedingCompassItem extends AttunableItem {
 
         if (result.isEmpty()) {
             if (livingEntity instanceof Player player) {
-                player.displayClientMessage(Component.literal("Sad"), true);
+                player.displayClientMessage(Component.translatable("message.whispering_anchors.heeding_compass.cannot_find"), true);
             }
         } else {
-            if (livingEntity instanceof Player player) {
-                player.displayClientMessage(Component.literal(result.get().anchorPos().pos().toString()), true);
-            }
-
             stack.set(ModDataComponents.ANCHOR_ATTUNEMENT, result.get());
         }
 

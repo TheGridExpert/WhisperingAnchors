@@ -41,7 +41,8 @@
   "advancement.whispering_anchors.harken_from_alive_dragon.title": "French Leave",
   "advancement.whispering_anchors.harken_from_alive_dragon.description": "Flee from the End with a Harkening Bell with the dragon still alive",
 
-  "message.whispering_anchors.anchor_obstructed": "The whispers of the anchor cannot be harkened: it's obstructed",
+  "message.whispering_anchors.anchor.obstructed": "The whispers of the anchor cannot be harkened: it's obstructed",
+  "message.whispering_anchors.heeding_compass.cannot_find": "The anchors are silent: no unknown towers in a meaningful radius",
 
   "tooltip.whispering_anchors.harkening_bell.attuned": "Attuned to [%s]",
   "tooltip.whispering_anchors.heeding_compass.known_anchors": "Nearest Known Anchors:",

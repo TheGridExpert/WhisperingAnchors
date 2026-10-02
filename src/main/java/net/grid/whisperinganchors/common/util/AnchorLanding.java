@@ -49,7 +49,7 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         }
 
         if (traveller instanceof Player player) {
-            player.displayClientMessage(Component.translatable("message.whispering_anchors.anchor_obstructed"), true);
+            player.displayClientMessage(Component.translatable("message.whispering_anchors.anchor.obstructed"), true);
         }
 
         return Optional.empty();
