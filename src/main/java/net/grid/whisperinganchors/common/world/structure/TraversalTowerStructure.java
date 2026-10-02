@@ -1,5 +1,6 @@
 package net.grid.whisperinganchors.common.world.structure;
 
+import com.google.common.base.Suppliers;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -13,6 +14,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.Pools;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.tags.StructureTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.IntProvider;
@@ -33,9 +35,12 @@ import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
 import net.minecraft.world.level.levelgen.structure.pools.EmptyPoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
@@ -46,6 +51,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class TraversalTowerStructure extends Structure {
 
@@ -59,11 +65,14 @@ public class TraversalTowerStructure extends Structure {
             Codec.intRange(1, 128).fieldOf("footprint").forGetter(structure -> structure.footprint),
             Codec.intRange(0, 128).fieldOf("max_terrain_difference").forGetter(structure -> structure.maxTerrainDifference),
             Codec.intRange(0, 4).fieldOf("search_radius").forGetter(structure -> structure.searchRadius),
+            Codec.intRange(0, 16).fieldOf("village_clearance").forGetter(structure -> structure.villageClearance),
             IntProvider.codec(0, 32).fieldOf("pillagers").forGetter(structure -> structure.pillagers),
             IntProvider.codec(0, 32).fieldOf("vindicators").forGetter(structure -> structure.vindicators),
             Codec.floatRange(0.0F, 1.0F).fieldOf("captain_chance").forGetter(structure -> structure.captainChance),
             TagKey.codec(Registries.BLOCK).fieldOf("spawn_floors").forGetter(structure -> structure.spawnFloors)
     ).apply(instance, TraversalTowerStructure::new));
+
+    private static final int MAX_STRUCTURE_REACH = 8;
 
     private static final int[][] CORNER_SAMPLES = {{0, 0}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
 
@@ -75,12 +84,13 @@ public class TraversalTowerStructure extends Structure {
     private final int footprint;
     private final int maxTerrainDifference;
     private final int searchRadius;
+    private final int villageClearance;
     private final IntProvider pillagers;
     private final IntProvider vindicators;
     private final float captainChance;
     private final TagKey<Block> spawnFloors;
 
-    public TraversalTowerStructure(StructureSettings settings, Holder<StructureTemplatePool> startPool, int groundLevel, int minScanY, int maxScanY, int scanStep, int footprint, int maxTerrainDifference, int searchRadius, IntProvider pillagers, IntProvider vindicators, float captainChance, TagKey<Block> spawnFloors) {
+    public TraversalTowerStructure(StructureSettings settings, Holder<StructureTemplatePool> startPool, int groundLevel, int minScanY, int maxScanY, int scanStep, int footprint, int maxTerrainDifference, int searchRadius, int villageClearance, IntProvider pillagers, IntProvider vindicators, float captainChance, TagKey<Block> spawnFloors) {
         super(settings);
         this.startPool = startPool;
         this.groundLevel = groundLevel;
@@ -90,6 +100,7 @@ public class TraversalTowerStructure extends Structure {
         this.footprint = footprint;
         this.maxTerrainDifference = maxTerrainDifference;
         this.searchRadius = searchRadius;
+        this.villageClearance = villageClearance;
         this.pillagers = pillagers;
         this.vindicators = vindicators;
         this.captainChance = captainChance;
@@ -98,7 +109,8 @@ public class TraversalTowerStructure extends Structure {
 
     @Override
     public Optional<GenerationStub> findValidGenerationPoint(GenerationContext context) {
-        return findSite(context).flatMap(chunkPos -> createStub(context, chunkPos));
+        Supplier<List<BoundingBox>> villages = Suppliers.memoize(() -> findVillages(context));
+        return findSite(context, villages).flatMap(chunkPos -> createStub(context, chunkPos));
     }
 
     @Override
@@ -106,7 +118,7 @@ public class TraversalTowerStructure extends Structure {
         return isBuildableSurface(context, context.chunkPos()) ? createStub(context, context.chunkPos()) : Optional.empty();
     }
 
-    private Optional<ChunkPos> findSite(GenerationContext context) {
+    private Optional<ChunkPos> findSite(GenerationContext context, Supplier<List<BoundingBox>> villages) {
         ChunkPos center = context.chunkPos();
 
         for (int ring = 0; ring <= this.searchRadius; ring++) {
@@ -115,12 +127,55 @@ public class TraversalTowerStructure extends Structure {
                     if (Math.abs(x) != ring && Math.abs(z) != ring) continue;
 
                     ChunkPos chunkPos = new ChunkPos(center.x + x, center.z + z);
-                    if (coversBiomeBelow(context, chunkPos) && isBuildableSurface(context, chunkPos)) return Optional.of(chunkPos);
+                    if (coversBiomeBelow(context, chunkPos) && isBuildableSurface(context, chunkPos) && !isNearVillage(chunkPos, villages.get())) {
+                        return Optional.of(chunkPos);
+                    }
                 }
             }
         }
 
         return Optional.empty();
+    }
+
+    private List<BoundingBox> findVillages(GenerationContext context) {
+        ChunkPos center = context.chunkPos();
+        int range = this.villageClearance + MAX_STRUCTURE_REACH + this.searchRadius + SectionPos.blockToSectionCoord(this.footprint) + 1;
+        List<BoundingBox> villages = new ArrayList<>();
+
+        for (StructureSet set : context.registryAccess().registryOrThrow(Registries.STRUCTURE_SET)) {
+            if (!(set.placement() instanceof RandomSpreadStructurePlacement spread)) continue;
+
+            List<Holder<Structure>> structures = set.structures().stream()
+                    .map(StructureSet.StructureSelectionEntry::structure)
+                    .filter(structure -> structure.is(StructureTags.VILLAGE))
+                    .toList();
+            if (structures.isEmpty()) continue;
+
+            int spacing = spread.spacing();
+            for (int cellX = Math.floorDiv(center.x - range, spacing); cellX <= Math.floorDiv(center.x + range, spacing); cellX++) {
+                for (int cellZ = Math.floorDiv(center.z - range, spacing); cellZ <= Math.floorDiv(center.z + range, spacing); cellZ++) {
+                    ChunkPos start = spread.getPotentialStructureChunk(context.seed(), cellX * spacing, cellZ * spacing);
+                    if (center.getChessboardDistance(start) > range) continue;
+
+                    for (Holder<Structure> structure : structures) {
+                        StructureStart village = structure.value().generate(context.registryAccess(), context.chunkGenerator(), context.biomeSource(), context.randomState(), context.structureTemplateManager(), context.seed(), start, 0, context.heightAccessor(), structure.value().biomes()::contains);
+                        if (village.isValid()) villages.add(village.getBoundingBox());
+                    }
+                }
+            }
+        }
+
+        return villages;
+    }
+
+    private boolean isNearVillage(ChunkPos chunkPos, List<BoundingBox> villages) {
+        int clearance = SectionPos.sectionToBlockCoord(this.villageClearance) + this.footprint;
+
+        for (BoundingBox village : villages) {
+            if (village.intersects(chunkPos.getMinBlockX() - clearance, chunkPos.getMinBlockZ() - clearance, chunkPos.getMaxBlockX() + clearance, chunkPos.getMaxBlockZ() + clearance)) return true;
+        }
+
+        return false;
     }
 
     private Optional<GenerationStub> createStub(GenerationContext context, ChunkPos chunkPos) {

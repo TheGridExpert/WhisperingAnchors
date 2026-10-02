@@ -19,6 +19,7 @@
   "start_pool": "whispering_anchors:traversal_tower",
   "step": "surface_structures",
   "terrain_adaptation": "beard_thin",
+  "village_clearance": 8,
   "vindicators": {
     "type": "minecraft:uniform",
     "max_inclusive": 2,
