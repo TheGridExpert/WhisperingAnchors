@@ -42,7 +42,10 @@ public final class AnchorNames {
             ending = ending.substring(1);
         }
 
-        return Component.literal(stem + ending + " " + randomElement(random, EPITHETS));
+        String main = stem + ending;
+        String epithet = randomElement(random, EPITHETS);
+
+        return Component.literal(random.nextBoolean() ? epithet + " " + main : main + " " + epithet);
     }
 
     private static long mix64(long value) {
