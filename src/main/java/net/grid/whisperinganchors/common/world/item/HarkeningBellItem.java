@@ -3,7 +3,6 @@ package net.grid.whisperinganchors.common.world.item;
 import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.client.sound.HarkeningBellSoundInstance;
 import net.grid.whisperinganchors.common.core.ModAdvancements;
-import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModItems;
 import net.grid.whisperinganchors.common.util.AnchorLanding;
@@ -31,7 +30,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
@@ -47,7 +45,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public class HarkeningBellItem extends Item {
+public class HarkeningBellItem extends AttunableItem {
 
     public static final ResourceLocation ATTUNED_PROPERTY = WhisperingAnchors.modLoc("attuned");
     public static final ResourceLocation RINGING_PROPERTY = WhisperingAnchors.modLoc("ringing");
@@ -70,53 +68,31 @@ public class HarkeningBellItem extends Item {
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (level instanceof ServerLevel serverLevel) {
-            AnchorAttunement attunement = stack.get(ModDataComponents.ANCHOR_ATTUNEMENT);
-            if (attunement != null) {
-                AnchorAttunement updated = attunement.tick(serverLevel);
-                if (updated == null) {
-                    stack.remove(ModDataComponents.ANCHOR_ATTUNEMENT);
-                } else if (updated != attunement) {
-                    stack.set(ModDataComponents.ANCHOR_ATTUNEMENT, updated);
-                }
-            }
-        }
-    }
+    protected InteractionResult useOnAnchor(UseOnContext context, BlockState state) {
+        // TODO: Add attunement sound
 
-    @Override
-    public InteractionResult useOn(UseOnContext context) {
-        BlockPos pos = context.getClickedPos();
         Level level = context.getLevel();
-        BlockState state = level.getBlockState(pos);
+        ItemStack stack = context.getItemInHand();
+        Player player = context.getPlayer();
+        if (player == null) {
+            return InteractionResult.PASS;
+        }
 
-        if (!state.is(ModBlocks.WHISPERING_ANCHOR)) {
-            return super.useOn(context);
-        } else {
-            // TODO: Add attunement sound
-
-            ItemStack stack = context.getItemInHand();
-            Player player = context.getPlayer();
-            if (player == null) {
-                return InteractionResult.PASS;
-            }
-
-            if (!level.isClientSide) {
-                AnchorAttunement attunement = AnchorAttunement.of(level, pos, state);
-                if (!player.hasInfiniteMaterials() && stack.getCount() == 1) {
-                    stack.set(ModDataComponents.ANCHOR_ATTUNEMENT, attunement);
-                } else {
-                    ItemStack newStack = stack.transmuteCopy(ModItems.HARKENING_BELL.get(), 1);
-                    stack.consume(1, player);
-                    newStack.set(ModDataComponents.ANCHOR_ATTUNEMENT, attunement);
-                    if (!player.getInventory().add(newStack)) {
-                        player.drop(newStack, false);
-                    }
+        if (!level.isClientSide) {
+            AnchorAttunement attunement = AnchorAttunement.of(level, context.getClickedPos(), state);
+            if (!player.hasInfiniteMaterials() && stack.getCount() == 1) {
+                stack.set(ModDataComponents.ANCHOR_ATTUNEMENT, attunement);
+            } else {
+                ItemStack newStack = stack.transmuteCopy(ModItems.HARKENING_BELL.get(), 1);
+                stack.consume(1, player);
+                newStack.set(ModDataComponents.ANCHOR_ATTUNEMENT, attunement);
+                if (!player.getInventory().add(newStack)) {
+                    player.drop(newStack, false);
                 }
             }
-
-            return InteractionResult.sidedSuccess(level.isClientSide);
         }
+
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override
@@ -139,9 +115,9 @@ public class HarkeningBellItem extends Item {
                 HarkeningBellSoundInstance.play(livingEntity);
             }
 
-            HarkeningSoulParticleOption souls = new HarkeningSoulParticleOption(RINGER_SOUL_RADIUS, SOUL_SPIN);
+            HarkeningSoulParticleOption particle = new HarkeningSoulParticleOption(RINGER_SOUL_RADIUS, SOUL_SPIN);
             for (int i = particleCountForTick(level.random, progress); i > 0; i--) {
-                level.addParticle(souls, livingEntity.getX(), livingEntity.getY() + level.random.nextDouble() * RINGER_SOUL_SPREAD, livingEntity.getZ(), 0.0, 0.0, 0.0);
+                level.addParticle(particle, livingEntity.getX(), livingEntity.getY() + level.random.nextDouble() * RINGER_SOUL_SPREAD, livingEntity.getZ(), 0.0, 0.0, 0.0);
             }
         } else if (level instanceof ServerLevel serverLevel) {
             AnchorAttunement attunement = stack.get(ModDataComponents.ANCHOR_ATTUNEMENT);

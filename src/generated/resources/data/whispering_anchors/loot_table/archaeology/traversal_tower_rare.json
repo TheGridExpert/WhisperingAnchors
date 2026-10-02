@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:archaeology",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "whispering_anchors:heeding_compass",
+          "weight": 17
+        },
+        {
+          "type": "minecraft:item",
+          "name": "whispering_anchors:harkening_bell",
+          "weight": 45
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "whispering_anchors:archaeology/traversal_tower_general",
+          "weight": 38
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "whispering_anchors:archaeology/traversal_tower_rare"
+}

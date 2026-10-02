@@ -2,6 +2,7 @@ package net.grid.whisperinganchors.client;
 
 import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.client.extension.HarkeningBellClientExtensions;
+import net.grid.whisperinganchors.client.extension.HeedingCompassClientExtensions;
 import net.grid.whisperinganchors.client.extension.WhisperingAnchorClientExtensions;
 import net.grid.whisperinganchors.client.model.AnchorRenderSettings;
 import net.grid.whisperinganchors.client.model.FreeAngleModel;
@@ -9,6 +10,7 @@ import net.grid.whisperinganchors.client.particle.AnchorCrumbleParticle;
 import net.grid.whisperinganchors.client.particle.HarkeningSoulParticle;
 import net.grid.whisperinganchors.client.renderer.BellGlint;
 import net.grid.whisperinganchors.client.renderer.BellOverlay;
+import net.grid.whisperinganchors.client.renderer.HeedingCompassAngle;
 import net.grid.whisperinganchors.client.renderer.blockentity.WhisperingAnchorRenderer;
 import net.grid.whisperinganchors.client.renderer.entity.AnchorEntityRenderer;
 import net.grid.whisperinganchors.common.core.ModBlockEntities;
@@ -22,6 +24,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -79,6 +82,7 @@ public final class WhisperingAnchorsClient {
         event.enqueueWork(() -> {
             ItemProperties.register(ModItems.HARKENING_BELL.get(), HarkeningBellItem.ATTUNED_PROPERTY, (stack, level, entity, seed) -> stack.has(ModDataComponents.ANCHOR_ATTUNEMENT) ? 1.0F : 0.0F);
             ItemProperties.register(ModItems.HARKENING_BELL.get(), HarkeningBellItem.RINGING_PROPERTY, (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
+            ItemProperties.register(ModItems.HEEDING_COMPASS.get(), ResourceLocation.withDefaultNamespace("angle"), new HeedingCompassAngle());
         });
     }
 
@@ -86,5 +90,6 @@ public final class WhisperingAnchorsClient {
     public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerBlock(new WhisperingAnchorClientExtensions(), ModBlocks.WHISPERING_ANCHOR.get());
         event.registerItem(new HarkeningBellClientExtensions(), ModItems.HARKENING_BELL.get());
+        event.registerItem(new HeedingCompassClientExtensions(), ModItems.HEEDING_COMPASS.get());
     }
 }

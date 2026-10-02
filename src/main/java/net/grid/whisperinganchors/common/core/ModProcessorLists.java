@@ -37,6 +37,7 @@ public class ModProcessorLists {
                 new RadialFadeProcessor(new BlockMatchTest(Blocks.GRAVEL), 5, 5, 4.0F, 7.0F),
                 weathering(),
                 new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GUARANTEED), ConstantInt.of(1)),
+                new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_RARE), ConstantInt.of(1)),
                 new CappedProcessor(buriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL), UniformInt.of(24, 48))
         )));
     }

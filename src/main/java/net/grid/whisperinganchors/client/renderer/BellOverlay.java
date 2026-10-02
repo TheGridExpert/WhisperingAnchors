@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
+import net.grid.whisperinganchors.common.core.ModItems;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -15,6 +16,7 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
+import net.minecraft.util.FastColor;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
@@ -36,13 +38,15 @@ public final class BellOverlay {
     private static final long QUAD_SEED = 42L;
 
     public static void render(ItemStack stack, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        if (!stack.is(ModItems.HARKENING_BELL)) return;
+
         AnchorAttunement attunement = stack.get(ModDataComponents.ANCHOR_ATTUNEMENT);
         if (attunement == null || attunement.anchorColor().isEmpty()) return;
 
         int rgb = attunement.anchorColor().get().getTextureDiffuseColor();
-        float red = (rgb >> 16 & 0xFF) / 255.0F;
-        float green = (rgb >> 8 & 0xFF) / 255.0F;
-        float blue = (rgb & 0xFF) / 255.0F;
+        float red = FastColor.ARGB32.red(rgb) / 255.0F;
+        float green = FastColor.ARGB32.green(rgb) / 255.0F;
+        float blue = FastColor.ARGB32.blue(rgb) / 255.0F;
 
         BakedModel model = Minecraft.getInstance().getModelManager().getModel(MODEL);
         VertexConsumer consumer = bufferSource.getBuffer(RENDER_TYPE);

@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor;
 import net.minecraft.world.item.DyeColor;
 import org.joml.Matrix4f;
 
@@ -22,7 +23,7 @@ public final class BellGlint {
     private static final long FAST_CYCLE_MILLIS = 30000L;
     private static final float GLINT_SKEW = (float) (Math.PI / 18);
 
-    private static final float GLINT_INTENSITY = 0.525F;
+    private static final float GLINT_INTENSITY = 0.52F;
 
     private static final ResourceLocation TEXTURE = WhisperingAnchors.modLoc("textures/misc/bell_glint.png");
 
@@ -54,9 +55,9 @@ public final class BellGlint {
 
     private static RenderStateShard.TexturingStateShard texturing(String name, DyeColor color) {
         int rgb = color.getTextureDiffuseColor();
-        float red = GLINT_INTENSITY * (rgb >> 16 & 0xFF) / 255.0F;
-        float green = GLINT_INTENSITY * (rgb >> 8 & 0xFF) / 255.0F;
-        float blue = GLINT_INTENSITY * (rgb & 0xFF) / 255.0F;
+        float red = GLINT_INTENSITY * FastColor.ARGB32.red(rgb) / 255.0F;
+        float green = GLINT_INTENSITY * FastColor.ARGB32.green(rgb) / 255.0F;
+        float blue = GLINT_INTENSITY * FastColor.ARGB32.blue(rgb) / 255.0F;
 
         return new RenderStateShard.TexturingStateShard(name, () -> {
             long scroll = (long) ((double) Util.getMillis() * Minecraft.getInstance().options.glintSpeed().get() * GLINT_SCROLL_SPEED);

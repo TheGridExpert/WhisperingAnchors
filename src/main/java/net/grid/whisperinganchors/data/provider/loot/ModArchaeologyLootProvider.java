@@ -10,6 +10,7 @@ import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.entries.LootPoolSingletonContainer;
+import net.minecraft.world.level.storage.loot.entries.NestedLootTable;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemDamageFunction;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
@@ -25,6 +26,13 @@ public class ModArchaeologyLootProvider implements LootTableSubProvider {
                 .withPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(1.0F))
                         .add(single(ModItems.HARKENING_BELL.get()))));
+
+        output.accept(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_RARE, LootTable.lootTable()
+                        .withPool(LootPool.lootPool()
+                                .setRolls(ConstantValue.exactly(1.0F))
+                                .add(single(ModItems.HEEDING_COMPASS.get()).setWeight(17))
+                                .add(single(ModItems.HARKENING_BELL.get()).setWeight(45))
+                                .add(NestedLootTable.lootTableReference(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL).setWeight(38))));
 
         output.accept(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL, LootTable.lootTable()
                 .withPool(LootPool.lootPool()
@@ -56,8 +64,7 @@ public class ModArchaeologyLootProvider implements LootTableSubProvider {
                         .add(single(Items.CROSSBOW)
                                 .apply(SetItemDamageFunction.setDamage(UniformGenerator.between(0.1F, 0.5F)))
                                 .setWeight(2))
-                        .add(single(ModItems.ANCHOR_BANNER_PATTERN.get()).setWeight(10))
-                        .add(single(ModItems.HARKENING_BELL.get()).setWeight(3))));
+                        .add(single(ModItems.ANCHOR_BANNER_PATTERN.get()).setWeight(2))));
     }
 
     private static LootPoolSingletonContainer.Builder<?> single(Item item) {

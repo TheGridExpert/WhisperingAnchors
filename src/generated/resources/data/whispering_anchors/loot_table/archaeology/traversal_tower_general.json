@@ -231,12 +231,7 @@
         {
           "type": "minecraft:item",
           "name": "whispering_anchors:anchor_banner_pattern",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "whispering_anchors:harkening_bell",
-          "weight": 3
+          "weight": 2
         }
       ],
       "rolls": 1.0

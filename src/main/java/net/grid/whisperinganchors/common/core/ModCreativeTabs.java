@@ -16,7 +16,8 @@ public class ModCreativeTabs {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.insertBefore(Items.LODESTONE.getDefaultInstance(), ModItems.WHISPERING_ANCHOR.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         } else if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.insertAfter(Items.RECOVERY_COMPASS.getDefaultInstance(), ModItems.HARKENING_BELL.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.insertAfter(Items.RECOVERY_COMPASS.getDefaultInstance(), ModItems.HEEDING_COMPASS.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.insertAfter(ModItems.HEEDING_COMPASS.toStack(), ModItems.HARKENING_BELL.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         } else if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.insertBefore(Items.FLOW_BANNER_PATTERN.getDefaultInstance(), ModItems.ANCHOR_BANNER_PATTERN.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
