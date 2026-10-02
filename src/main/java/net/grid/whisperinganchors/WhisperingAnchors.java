@@ -28,6 +28,7 @@ public class WhisperingAnchors {
         ModStructureProcessors.register(eventBus);
         ModMapDecorations.register(eventBus);
         ModAdvancements.register(eventBus);
+        ModRecipes.register(eventBus);
 
         modContainer.registerConfig(Type.SERVER, ModConfig.serverSpec);
 

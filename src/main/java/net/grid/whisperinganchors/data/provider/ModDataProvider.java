@@ -53,6 +53,7 @@ public class ModDataProvider {
         ModTagsProvider.register(generator, packOutput, lookupProvider, existingFileHelper);
         ModModelsProvider.register(generator, packOutput, existingFileHelper, event.includeClient());
         generator.addProvider(event.includeClient(), new ModSoundProvider(packOutput, existingFileHelper));
+        generator.addProvider(true, new ModRecipeProvider(packOutput, lookupProvider));
         generator.addProvider(true, new ModParticleDescriptionProvider(packOutput, existingFileHelper));
         generator.addProvider(true, new ModAdvancementProvider(packOutput, lookupProvider, existingFileHelper));
         generator.addProvider(true, new ModGlobalLootModifierProvider(packOutput, lookupProvider));
