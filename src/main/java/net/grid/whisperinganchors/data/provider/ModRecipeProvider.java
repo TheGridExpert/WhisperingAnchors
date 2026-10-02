@@ -1,6 +1,5 @@
 package net.grid.whisperinganchors.data.provider;
 
-import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.common.world.item.recipe.CompassClearingRecipe;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -18,6 +17,6 @@ public class ModRecipeProvider extends RecipeProvider {
 
     @Override
     protected void buildRecipes(RecipeOutput recipeOutput) {
-        SpecialRecipeBuilder.special(CompassClearingRecipe::new).save(recipeOutput, WhisperingAnchors.modLoc("compass_clearing"));
+        SpecialRecipeBuilder.special(CompassClearingRecipe::new).save(recipeOutput, CompassClearingRecipe.ID);
     }
 }

@@ -25,10 +25,6 @@ sourceSets.main.resources {
     exclude("src/generated/**/.cache") // datagen cache files
 }
 
-repositories {
-    // Add here additional repositories if required by some of the dependencies below.
-}
-
 base {
     archivesName = mod_id
 }
@@ -111,10 +107,30 @@ neoForge {
 // a dependency that will be present for runtime testing but that is
 // "optional", meaning it will not be pulled by dependents of this mod.
 configurations {
+    localRuntime {
+        canBeConsumed = false
+        canBeResolved = false
+    }
+
     runtimeClasspath.extendsFrom localRuntime
 }
 
+repositories {
+    // JEI
+    maven {
+        name = "Jared's maven"
+        url = "https://maven.blamejared.com/"
+    }
+    maven {
+        name = "ModMaven"
+        url = "https://modmaven.dev"
+    }
+}
+
 dependencies {
+    compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
+    localRuntime("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

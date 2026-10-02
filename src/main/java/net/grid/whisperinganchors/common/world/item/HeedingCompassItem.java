@@ -5,19 +5,16 @@ import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModStructures;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
+import net.grid.whisperinganchors.common.world.item.component.IKnownAnchorsTooltip;
 import net.grid.whisperinganchors.common.world.item.component.KnownAnchors;
 import net.grid.whisperinganchors.misc.mixin.accessor.SinglePoolElementAccessor;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -228,36 +225,12 @@ public class HeedingCompassItem extends AttunableItem {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        Player player = Minecraft.getInstance().player;
-        if (player == null) return;
-
-        KnownAnchors knownAnchors = stack.get(ModDataComponents.KNOWN_ANCHORS);
-        if (knownAnchors == null || knownAnchors.anchors().isEmpty()) return;
-
-        List<AnchorAttunement> nearest = knownAnchors.anchors().stream()
-                .filter(anchor -> anchor.anchorPos().dimension().equals(player.level().dimension()))
-                .sorted(Comparator.comparingDouble(anchor -> anchor.anchorPos().pos().distToCenterSqr(player.position())))
-                .limit(SHOWN_KNOWN_ANCHORS)
-                .toList();
-
-        List<Component> lines = new ArrayList<>();
-        lines.add(Component.empty());
-        lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchors").withStyle(ChatFormatting.GRAY));
-
-        for (AnchorAttunement anchor : nearest) {
-            double distance = Math.sqrt(anchor.anchorPos().pos().distToCenterSqr(player.position()));
-            lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor", anchor.getDisplayName(), formatDistance(distance).withStyle(ChatFormatting.DARK_GRAY)).withStyle(ChatFormatting.GRAY));
+        IKnownAnchorsTooltip knownAnchors = stack.get(ModDataComponents.KNOWN_ANCHORS);
+        if (knownAnchors == null) {
+            knownAnchors = stack.get(ModDataComponents.DISPLAY_ANCHORS);
         }
+        if (knownAnchors == null || knownAnchors.getDisplayAnchors().isEmpty()) return;
 
-        int hidden = knownAnchors.anchors().size() - nearest.size();
-        if (hidden > 0) {
-            lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.more_known_anchors", hidden).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
-        }
-
-        tooltipComponents.addAll(1, lines);
-    }
-
-    private static MutableComponent formatDistance(double distance) {
-        return distance < 1000 ? Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor.meters", Mth.floor(distance)) : Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor.kilometers", String.format(Locale.ROOT, "%.1f", distance / 1000));
+        knownAnchors.addTooltip(tooltipComponents);
     }
 }

@@ -1,9 +1,11 @@
 package net.grid.whisperinganchors.common.world.item.recipe;
 
+import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModItems;
 import net.grid.whisperinganchors.common.core.ModRecipes;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
@@ -12,6 +14,8 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 
 public class CompassClearingRecipe extends CustomRecipe {
+
+    public static final ResourceLocation ID = WhisperingAnchors.modLoc("compass_clearing");
 
     public CompassClearingRecipe(CraftingBookCategory category) {
         super(category);
