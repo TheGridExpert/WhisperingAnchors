@@ -82,7 +82,7 @@ public class HeedingCompassItem extends AttunableItem {
             stack.set(ModDataComponents.KNOWN_ANCHORS, knownAnchors.with(AnchorAttunement.of(level, context.getClickedPos(), state)));
         }
 
-        return InteractionResult.FAIL;
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override
