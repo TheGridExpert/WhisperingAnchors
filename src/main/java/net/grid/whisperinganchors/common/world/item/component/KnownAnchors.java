@@ -8,7 +8,7 @@ import net.minecraft.network.codec.StreamCodec;
 import java.util.ArrayList;
 import java.util.List;
 
-public record KnownAnchors(List<AnchorAttunement> anchors) implements IKnownAnchorsTooltip {
+public record KnownAnchors(List<AnchorAttunement> anchors) {
 
     public static final KnownAnchors EMPTY = new KnownAnchors(List.of());
 
@@ -26,10 +26,5 @@ public record KnownAnchors(List<AnchorAttunement> anchors) implements IKnownAnch
         updated.add(anchor);
 
         return new KnownAnchors(updated);
-    }
-
-    @Override
-    public List<DisplayAnchor> getDisplayAnchors() {
-        return anchors().stream().map(anchor -> new DisplayAnchor(anchor.anchorPos(), anchor.getDisplayName())).toList();
     }
 }
