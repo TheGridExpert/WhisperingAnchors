@@ -1,6 +1,7 @@
 package net.grid.whisperinganchors.client.sound;
 
 import net.grid.whisperinganchors.common.core.ModSounds;
+import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.AnchorPart;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
@@ -56,7 +57,7 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
             PLAYING.remove(anchorPos, playing);
         }
 
-        if (calculateVolumeAt(listener.getEyePosition().distanceTo(getRestingPosition(anchorPos))) <= 0.0F) {
+        if (calculateVolumeAt(listener.getEyePosition().distanceTo(getRestingPosition(level, anchorPos))) <= 0.0F) {
             return;
         }
 
@@ -92,7 +93,7 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
 
     private Vec3 getSourcePosition() {
         AnchorEntity resolved = resolveAnchor();
-        return resolved == null ? getRestingPosition(this.anchorPos) : resolved.position();
+        return resolved == null ? getRestingPosition(this.level, this.anchorPos) : SubLevelHandler.INSTANCE.toWorldPosition(this.level, resolved.position());
     }
 
     private @Nullable AnchorEntity resolveAnchor() {
@@ -113,8 +114,8 @@ public class WhisperingAnchorSoundInstance extends AbstractTickableSoundInstance
         stop();
     }
 
-    private static Vec3 getRestingPosition(BlockPos anchorPos) {
-        return Vec3.atCenterOf(anchorPos.below(AnchorPart.MIDDLE.offsetFromTop()));
+    private static Vec3 getRestingPosition(Level level, BlockPos anchorPos) {
+        return SubLevelHandler.INSTANCE.toWorldPosition(level, Vec3.atCenterOf(anchorPos.below(AnchorPart.MIDDLE.offsetFromTop())));
     }
 
     private static float calculateVolumeAt(double distance) {

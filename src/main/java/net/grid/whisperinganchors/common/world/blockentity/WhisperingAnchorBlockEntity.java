@@ -137,11 +137,15 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        if (this.color != null) {
-            tag.putString(AnchorEntity.KEY_COLOR, this.color.getName());
+        AnchorEntity anchor = getAnchor();
+        AnchorIdentity identity = anchor != null ? anchor : this;
+        DyeColor savedColor = identity.getColor();
+        Component savedName = identity.getCustomName();
+        if (savedColor != null) {
+            tag.putString(AnchorEntity.KEY_COLOR, savedColor.getName());
         }
-        if (this.customName != null) {
-            tag.putString(AnchorEntity.KEY_CUSTOM_NAME, Component.Serializer.toJson(this.customName, registries));
+        if (savedName != null) {
+            tag.putString(AnchorEntity.KEY_CUSTOM_NAME, Component.Serializer.toJson(savedName, registries));
         }
     }
 

@@ -1,15 +1,18 @@
 package net.grid.whisperinganchors.client.renderer;
 
 import net.grid.whisperinganchors.common.core.ModDataComponents;
+import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.minecraft.Util;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -24,7 +27,7 @@ public class HeedingCompassAngle extends CompassItemPropertyFunction {
     private final Map<Object, Map<Object, Transition>> transitions = new WeakHashMap<>();
 
     public HeedingCompassAngle() {
-        super((level, stack, entity) -> getTarget(stack));
+        super((level, stack, entity) -> getPointedTarget(level, stack));
     }
 
     @Override
@@ -36,6 +39,15 @@ public class HeedingCompassAngle extends CompassItemPropertyFunction {
         Transition transition = this.transitions.computeIfAbsent(owner, key -> new HashMap<>()).computeIfAbsent(slot, key -> new Transition(getTarget(stack), angle));
 
         return transition.update(getTarget(stack), angle, Util.getMillis());
+    }
+
+    private static @Nullable GlobalPos getPointedTarget(ClientLevel level, ItemStack stack) {
+        GlobalPos target = getTarget(stack);
+        if (target == null || target.dimension() != level.dimension()) return target;
+        if (SubLevelHandler.INSTANCE.isInUnloadedSubLevel(level, target.pos())) return null;
+
+        Vec3 position = SubLevelHandler.INSTANCE.toWorldPosition(level, Vec3.atCenterOf(target.pos()));
+        return GlobalPos.of(target.dimension(), BlockPos.containing(position));
     }
 
     private static @Nullable GlobalPos getTarget(ItemStack stack) {

@@ -2,6 +2,7 @@ package net.grid.whisperinganchors.data.provider.tag;
 
 import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.common.core.ModEntities;
+import net.grid.whisperinganchors.common.core.tag.ModEntityTypeTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.EntityTypeTagsProvider;
@@ -21,5 +22,8 @@ public class ModEntityTypeTagsProvider extends EntityTypeTagsProvider {
     protected void addTags(HolderLookup.Provider provider) {
         tag(Tags.EntityTypes.CAPTURING_NOT_SUPPORTED).add(ModEntities.ANCHOR.get());
         tag(Tags.EntityTypes.TELEPORTING_NOT_SUPPORTED).add(ModEntities.ANCHOR.get());
+
+        tag(ModEntityTypeTags.Integration.SABLE_RETAIN_IN_SUB_LEVEL).add(ModEntities.ANCHOR.get());
+        tag(ModEntityTypeTags.Integration.SABLE_DESTROY_WITH_SUB_LEVEL).add(ModEntities.ANCHOR.get());
     }
 }

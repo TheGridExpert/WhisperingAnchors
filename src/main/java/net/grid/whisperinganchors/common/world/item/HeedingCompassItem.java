@@ -3,6 +3,7 @@ package net.grid.whisperinganchors.common.world.item;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModStructures;
+import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.grid.whisperinganchors.common.world.item.component.KnownAnchors;
@@ -45,6 +46,7 @@ import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -236,7 +238,7 @@ public class HeedingCompassItem extends AttunableItem {
 
         List<AnchorAttunement> nearest = knownAnchors.anchors().stream()
                 .filter(anchor -> anchor.anchorPos().dimension().equals(player.level().dimension()))
-                .sorted(Comparator.comparingDouble(anchor -> anchor.anchorPos().pos().distToCenterSqr(player.position())))
+                .sorted(Comparator.comparingDouble(anchor -> getWorldPosition(player.level(), anchor).distanceToSqr(player.position())))
                 .limit(SHOWN_KNOWN_ANCHORS)
                 .toList();
         if (nearest.isEmpty()) return;
@@ -246,7 +248,7 @@ public class HeedingCompassItem extends AttunableItem {
         lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchors").withStyle(ChatFormatting.GRAY));
 
         for (AnchorAttunement anchor : nearest) {
-            double distance = Math.sqrt(anchor.anchorPos().pos().distToCenterSqr(player.position()));
+            double distance = getWorldPosition(player.level(), anchor).distanceTo(player.position());
             lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor", anchor.getDisplayName(), formatDistance(distance).withStyle(ChatFormatting.DARK_GRAY)).withStyle(ChatFormatting.GRAY));
         }
 
@@ -256,6 +258,10 @@ public class HeedingCompassItem extends AttunableItem {
         }
 
         tooltipComponents.addAll(1, lines);
+    }
+
+    private static Vec3 getWorldPosition(Level level, AnchorAttunement anchor) {
+        return SubLevelHandler.INSTANCE.toWorldPosition(level, Vec3.atCenterOf(anchor.anchorPos().pos()));
     }
 
     private static MutableComponent formatDistance(double distance) {

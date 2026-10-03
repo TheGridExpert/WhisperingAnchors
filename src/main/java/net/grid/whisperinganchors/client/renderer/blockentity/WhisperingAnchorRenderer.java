@@ -3,6 +3,7 @@ package net.grid.whisperinganchors.client.renderer.blockentity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.grid.whisperinganchors.client.renderer.AnchorModelRenderer;
 import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
@@ -63,7 +64,7 @@ public class WhisperingAnchorRenderer implements BlockEntityRenderer<WhisperingA
 
         Component name = blockEntity.getCustomName();
         if (name != null) {
-            renderNameTag(colorDisplayName(name, blockEntity.getColor()), centreOfMass, top, poseStack, bufferSource, light);
+            renderNameTag(level, colorDisplayName(name, blockEntity.getColor()), centreOfMass, top, partialTick, poseStack, bufferSource, light);
         }
     }
 
@@ -71,12 +72,13 @@ public class WhisperingAnchorRenderer implements BlockEntityRenderer<WhisperingA
         return color == null ? name : name.copy().withStyle(style -> style.withColor(color.getTextColor()));
     }
 
-    private void renderNameTag(Component name, Vec3 centreOfMass, BlockPos top, PoseStack poseStack, MultiBufferSource bufferSource, int light) {
+    private void renderNameTag(Level level, Component name, Vec3 centreOfMass, BlockPos top, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int light) {
         Vec3 anchorPoint = centreOfMass.add(0.0, AnchorEntity.BODY_TOP + NAME_TAG_LIFT, 0.0);
-        if (this.entityRenderer.camera == null || this.entityRenderer.camera.getPosition().distanceToSqr(centreOfMass) > NAME_TAG_RANGE_SQ) return;
+        if (this.entityRenderer.camera == null || this.entityRenderer.camera.getPosition().distanceToSqr(SubLevelHandler.INSTANCE.toWorldPosition(level, centreOfMass)) > NAME_TAG_RANGE_SQ) return;
 
         poseStack.pushPose();
         poseStack.translate(anchorPoint.x - top.getX(), anchorPoint.y - top.getY(), anchorPoint.z - top.getZ());
+        poseStack.mulPose(SubLevelHandler.INSTANCE.getRenderOrientation(top, partialTick).conjugate());
         poseStack.mulPose(this.entityRenderer.cameraOrientation());
         poseStack.scale(NAME_TAG_SCALE, -NAME_TAG_SCALE, NAME_TAG_SCALE);
 

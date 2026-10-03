@@ -1,6 +1,7 @@
 package net.grid.whisperinganchors.common.world.entity;
 
 import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
 import net.grid.whisperinganchors.common.world.block.AnchorPart;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
@@ -71,6 +72,11 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final double GYRATION_RADIUS_SQ = 0.4587;
 
     private static final double GRAVITY = 0.0245; // Minecraft's default is 0.08
+    private static final Vec3 GRAVITY_PULL = new Vec3(0.0, -GRAVITY, 0.0);
+    private static final double MAX_GRAVITY_SCALE = 3.0;
+    private static final double FRAME_SMOOTHING_TICKS = 4.0;
+    private static final double MAX_FRAME_KICK = 1.0;
+    private static final double MAX_SWING_RATE = 0.5;
 
     private static final double CHAIN_RESTORING = GRAVITY / CHAIN_LENGTH;
     private static final double TILT_RESTORING = GRAVITY * SHACKLE_TO_CENTRE / GYRATION_RADIUS_SQ;
@@ -79,6 +85,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final double SWING_DRAG = 0.997;
     private static final double SHACKLE_FRICTION = 0.40;
     private static final float MAX_ANGLE = (float) Math.toRadians(70.0);
+    private static final double LIMIT_RESTITUTION = 0.2;
+    private static final double LIMIT_FRICTION = 0.5;
 
     private static final double HIT_SPECIFIC_IMPULSE = 0.02;
     private static final double WALK_SPECIFIC_IMPULSE = 0.0005;
@@ -136,6 +144,13 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private float chainZ;
     private float tiltX;
     private float tiltZ;
+    private float restX;
+    private float restZ;
+    private double gravityScale = 1.0;
+    private Vec3 localDown = new Vec3(0.0, -1.0, 0.0);
+    private @Nullable Vec3 lastFrameVelocity;
+    private @Nullable Vec3 lastFrameSpin;
+    private Vec3 steadyFrameAcceleration = Vec3.ZERO;
     private float chainXO;
     private float chainZO;
     private float tiltXO;
@@ -292,7 +307,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     private void convertPushToSwing() {
-        Vec3 push = getDeltaMovement();
+        Vec3 push = SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), getDeltaMovement());
         double speed = Math.sqrt(push.x * push.x + push.z * push.z);
         if (speed < 1.0E-4) return;
 
@@ -315,11 +330,11 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     private double getTipX() {
-        return CHAIN_LENGTH * Math.sin(this.chainX) + TIP_BELOW_SHACKLE * Math.sin(this.tiltX);
+        return CHAIN_LENGTH * Math.sin(this.chainX - this.restX) + TIP_BELOW_SHACKLE * Math.sin(this.tiltX - this.restX);
     }
 
     private double getTipZ() {
-        return CHAIN_LENGTH * Math.sin(this.chainZ) + TIP_BELOW_SHACKLE * Math.sin(this.tiltZ);
+        return CHAIN_LENGTH * Math.sin(this.chainZ - this.restZ) + TIP_BELOW_SHACKLE * Math.sin(this.tiltZ - this.restZ);
     }
 
     private double getTipVelX() {
@@ -382,16 +397,99 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         this.tiltVelZ += swingZ;
     }
 
+    private static float toAngleX(Vec3 direction, float previous) {
+        return previous + (float) Math.IEEEremainder(Math.atan2(direction.x, -direction.y) - previous, Math.PI * 2.0);
+    }
+
+    private static float toAngleZ(Vec3 direction) {
+        return (float) Math.asin(Mth.clamp(direction.z, -1.0, 1.0));
+    }
+
+    private Vec3 calculateFrameAcceleration(Vec3 suspension) {
+        Vec3 velocity = SubLevelHandler.INSTANCE.getVelocity(level(), suspension);
+        Vec3 acceleration = this.lastFrameVelocity == null ? Vec3.ZERO : velocity.subtract(this.lastFrameVelocity);
+        this.lastFrameVelocity = velocity;
+
+        return acceleration;
+    }
+
+    private void applyFrameMotion() {
+        Vec3 suspension = getSuspensionPoint();
+        Vec3 spin = SubLevelHandler.INSTANCE.getAngularVelocity(level(), suspension);
+        Vec3 spinUp = this.lastFrameSpin == null ? Vec3.ZERO : spin.subtract(this.lastFrameSpin);
+        this.lastFrameSpin = spin;
+
+        Vec3 offset = getCentreOfMass(this.chainX, this.chainZ, this.tiltX, this.tiltZ).subtract(suspension);
+        Vec3 kick = SubLevelHandler.INSTANCE.toLocalDirection(level(), suspension, calculateFrameAcceleration(suspension)).add(spinUp.cross(offset));
+        this.steadyFrameAcceleration = this.steadyFrameAcceleration.add(kick.subtract(this.steadyFrameAcceleration).scale(1.0 / FRAME_SMOOTHING_TICKS));
+        Vec3 jolt = kick.subtract(this.steadyFrameAcceleration);
+        double joltStrength = jolt.length();
+        if (joltStrength > MAX_FRAME_KICK) {
+            jolt = jolt.scale(MAX_FRAME_KICK / joltStrength);
+        }
+        swingRigidly(jolt.reverse(), offset.length());
+
+        Vec3 pull = GRAVITY_PULL.subtract(this.steadyFrameAcceleration).subtract(spin.cross(spin.cross(offset)));
+        double strength = pull.length();
+        if (!Double.isFinite(strength)) return;
+        if (strength < 1.0E-6) {
+            this.gravityScale = 0.0;
+            return;
+        }
+
+        this.localDown = pull.scale(1.0 / strength);
+        this.gravityScale = Math.min(strength / GRAVITY, MAX_GRAVITY_SCALE);
+        this.restX = toAngleX(this.localDown, this.restX);
+        this.restZ = toAngleZ(this.localDown);
+    }
+
+    private void swingRigidly(Vec3 velocityChange, double reach) {
+        if (reach < 1.0E-4 || velocityChange.lengthSqr() < 1.0E-12) return;
+
+        double cosZ = Math.cos(this.tiltZ);
+        Vec3 alongX = new Vec3(Math.cos(this.tiltX) * cosZ, Math.sin(this.tiltX) * cosZ, 0.0);
+        Vec3 alongZ = new Vec3(-Math.sin(this.tiltX) * Math.sin(this.tiltZ), Math.cos(this.tiltX) * Math.sin(this.tiltZ), cosZ);
+        double deltaX = velocityChange.dot(alongX) / (reach * cosZ * cosZ);
+        double deltaZ = velocityChange.dot(alongZ) / reach;
+
+        this.chainVelX += deltaX;
+        this.chainVelZ += deltaZ;
+        this.tiltVelX += deltaX;
+        this.tiltVelZ += deltaZ;
+    }
+
+    private double calculatePullAlongX(float angleX, float angleZ) {
+        double cosZ = Math.cos(angleZ);
+        return (this.localDown.x * Math.cos(angleX) + this.localDown.y * Math.sin(angleX)) / cosZ;
+    }
+
+    private double calculatePullAlongZ(float angleX, float angleZ) {
+        return (this.localDown.y * Math.cos(angleX) - this.localDown.x * Math.sin(angleX)) * Math.sin(angleZ) + this.localDown.z * Math.cos(angleZ);
+    }
+
+    private void applySphericalMotion() {
+        double chainVelX = this.chainVelX;
+        this.chainVelX += 2.0 * Math.tan(this.chainZ) * chainVelX * this.chainVelZ;
+        this.chainVelZ -= Math.sin(this.chainZ) * Math.cos(this.chainZ) * chainVelX * chainVelX;
+
+        double tiltVelX = this.tiltVelX;
+        this.tiltVelX += 2.0 * Math.tan(this.tiltZ) * tiltVelX * this.tiltVelZ;
+        this.tiltVelZ -= Math.sin(this.tiltZ) * Math.cos(this.tiltZ) * tiltVelX * tiltVelX;
+    }
+
     private void tickPendulum() {
+        applyFrameMotion();
         applyOrbitDrive();
 
-        double couplingX = TILT_RESTORING * Math.sin(this.chainX - this.tiltX);
-        double couplingZ = TILT_RESTORING * Math.sin(this.chainZ - this.tiltZ);
+        double couplingX = this.gravityScale * TILT_RESTORING * Math.sin(this.chainX - this.tiltX);
+        double couplingZ = this.gravityScale * TILT_RESTORING * Math.sin(this.chainZ - this.tiltZ);
 
         this.tiltVelX += couplingX;
         this.tiltVelZ += couplingZ;
-        this.chainVelX -= CHAIN_RESTORING * Math.sin(this.chainX) + TILT_TO_CHAIN * couplingX;
-        this.chainVelZ -= CHAIN_RESTORING * Math.sin(this.chainZ) + TILT_TO_CHAIN * couplingZ;
+        this.chainVelX += this.gravityScale * CHAIN_RESTORING * calculatePullAlongX(this.chainX, this.chainZ) - TILT_TO_CHAIN * couplingX;
+        this.chainVelZ += this.gravityScale * CHAIN_RESTORING * calculatePullAlongZ(this.chainX, this.chainZ) - TILT_TO_CHAIN * couplingZ;
+
+        applySphericalMotion();
 
         this.chainVelX *= SWING_DRAG;
         this.chainVelZ *= SWING_DRAG;
@@ -405,37 +503,76 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         this.chainVelX += TILT_TO_CHAIN * slipX;
         this.chainVelZ += TILT_TO_CHAIN * slipZ;
 
+        this.chainVelX = Mth.clamp(this.chainVelX, -MAX_SWING_RATE, MAX_SWING_RATE);
+        this.chainVelZ = Mth.clamp(this.chainVelZ, -MAX_SWING_RATE, MAX_SWING_RATE);
+        this.tiltVelX = Mth.clamp(this.tiltVelX, -MAX_SWING_RATE, MAX_SWING_RATE);
+        this.tiltVelZ = Mth.clamp(this.tiltVelZ, -MAX_SWING_RATE, MAX_SWING_RATE);
+
         this.chainX += (float) this.chainVelX;
         this.chainZ += (float) this.chainVelZ;
         this.tiltX += (float) this.tiltVelX;
         this.tiltZ += (float) this.tiltVelZ;
 
-        if (Math.abs(this.chainX) > MAX_ANGLE) {
-            this.chainX = Math.copySign(MAX_ANGLE, this.chainX);
-            this.chainVelX = 0.0;
-        }
-        if (Math.abs(this.chainZ) > MAX_ANGLE) {
-            this.chainZ = Math.copySign(MAX_ANGLE, this.chainZ);
-            this.chainVelZ = 0.0;
-        }
-        if (Math.abs(this.tiltX) > MAX_ANGLE) {
-            this.tiltX = Math.copySign(MAX_ANGLE, this.tiltX);
-            this.tiltVelX = 0.0;
-        }
-        if (Math.abs(this.tiltZ) > MAX_ANGLE) {
-            this.tiltZ = Math.copySign(MAX_ANGLE, this.tiltZ);
-            this.tiltVelZ = 0.0;
+        limitChainSwing();
+        limitTiltSwing();
+
+        if (!isSwingFinite()) {
+            this.chainX = this.tiltX = this.restX;
+            this.chainZ = this.tiltZ = this.restZ;
+            this.chainVelX = this.chainVelZ = this.tiltVelX = this.tiltVelZ = 0.0;
         }
 
         if (this.orbitStrength <= 0.0F && isAtRest()) {
-            this.chainX = this.chainZ = this.tiltX = this.tiltZ = 0.0F;
+            this.chainX = this.tiltX = this.restX;
+            this.chainZ = this.tiltZ = this.restZ;
             this.chainVelX = this.chainVelZ = this.tiltVelX = this.tiltVelZ = 0.0;
         }
     }
 
+    private boolean isSwingFinite() {
+        return Float.isFinite(this.chainX) && Float.isFinite(this.chainZ) && Float.isFinite(this.tiltX) && Float.isFinite(this.tiltZ)
+                && Double.isFinite(this.chainVelX) && Double.isFinite(this.chainVelZ) && Double.isFinite(this.tiltVelX) && Double.isFinite(this.tiltVelZ);
+    }
+
+    private void limitChainSwing() {
+        double reach = Math.hypot(this.chainX, this.chainZ);
+        if (reach <= MAX_ANGLE) return;
+
+        double outX = this.chainX / reach;
+        double outZ = this.chainZ / reach;
+        this.chainX = (float) (outX * MAX_ANGLE);
+        this.chainZ = (float) (outZ * MAX_ANGLE);
+
+        double outward = this.chainVelX * outX + this.chainVelZ * outZ;
+        if (outward > 0.0) {
+            double alongX = this.chainVelX - outward * outX;
+            double alongZ = this.chainVelZ - outward * outZ;
+            this.chainVelX = alongX * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outX;
+            this.chainVelZ = alongZ * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outZ;
+        }
+    }
+
+    private void limitTiltSwing() {
+        double reach = Math.hypot(this.tiltX, this.tiltZ);
+        if (reach <= MAX_ANGLE) return;
+
+        double outX = this.tiltX / reach;
+        double outZ = this.tiltZ / reach;
+        this.tiltX = (float) (outX * MAX_ANGLE);
+        this.tiltZ = (float) (outZ * MAX_ANGLE);
+
+        double outward = this.tiltVelX * outX + this.tiltVelZ * outZ;
+        if (outward > 0.0) {
+            double alongX = this.tiltVelX - outward * outX;
+            double alongZ = this.tiltVelZ - outward * outZ;
+            this.tiltVelX = alongX * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outX;
+            this.tiltVelZ = alongZ * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outZ;
+        }
+    }
+
     private boolean isAtRest() {
-        return Math.abs(this.chainX) < REST_ANGLE_EPSILON && Math.abs(this.chainZ) < REST_ANGLE_EPSILON
-                && Math.abs(this.tiltX) < REST_ANGLE_EPSILON && Math.abs(this.tiltZ) < REST_ANGLE_EPSILON
+        return Math.abs(this.chainX - this.restX) < REST_ANGLE_EPSILON && Math.abs(this.chainZ - this.restZ) < REST_ANGLE_EPSILON
+                && Math.abs(this.tiltX - this.restX) < REST_ANGLE_EPSILON && Math.abs(this.tiltZ - this.restZ) < REST_ANGLE_EPSILON
                 && Math.abs(this.chainVelX) < REST_VELOCITY_EPSILON && Math.abs(this.chainVelZ) < REST_VELOCITY_EPSILON
                 && Math.abs(this.tiltVelX) < REST_VELOCITY_EPSILON && Math.abs(this.tiltVelZ) < REST_VELOCITY_EPSILON;
     }
@@ -483,7 +620,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private void collideWithNearbyAnchors() {
         if (isAtRest()) return;
 
-        for (AnchorEntity other : level().getEntitiesOfClass(AnchorEntity.class, getBoundingBox(), candidate -> candidate != this)) {
+        for (AnchorEntity other : level().getEntitiesOfClass(AnchorEntity.class, getBoundingBox(), candidate -> candidate != this && SubLevelHandler.INSTANCE.isInSameSubLevel(level(), position(), candidate.position()))) {
             if (other.isAtRest() || getId() < other.getId()) {
                 resolveContact(other);
             }
@@ -612,14 +749,14 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     public void push(Entity entity) {
         if (level().isClientSide() || entity == this) return;
 
-        double dx = getX() - entity.getX();
-        double dz = getZ() - entity.getZ();
+        Vec3 pusher = SubLevelHandler.INSTANCE.toLocalPosition(level(), position(), entity.position());
+        double dx = getX() - pusher.x;
+        double dz = getZ() - pusher.z;
         double length = Math.sqrt(dx * dx + dz * dz);
         if (length < 1.0E-4) return;
 
         AABB self = getBoundingBox();
-        AABB other = entity.getBoundingBox();
-        double contactY = (Math.min(self.maxY, other.maxY) + Math.max(self.minY, other.minY)) * 0.5;
+        double contactY = (Math.min(self.maxY, pusher.y + entity.getBbHeight()) + Math.max(self.minY, pusher.y)) * 0.5;
 
         double towardsAnchorX = dx / length;
         double towardsAnchorZ = dz / length;
@@ -649,11 +786,12 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             playImpactSound(1.0F, true);
         }
 
-        Vec3 motion = target.getDeltaMovement();
+        Vec3 motion = SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), target.getDeltaMovement());
         double approach = Mth.clamp(anchorSpeedTowards - (motion.x * normalX + motion.z * normalZ), 0.0, anchorSpeedTowards);
         double impulse = (1.0 + IMPACT_RESTITUTION) * approach / (calculateInverseEffectiveMass(belowShackle) + 1.0 / VICTIM_MASS_RATIO);
         applyImpulse(-pushX, -pushZ, contactY, impulse);
-        victim.knockback(impulse / VICTIM_MASS_RATIO, -pushX, -pushZ);
+        Vec3 knockback = SubLevelHandler.INSTANCE.toWorldDirection(level(), position(), new Vec3(pushX, 0.0, pushZ));
+        victim.knockback(impulse / VICTIM_MASS_RATIO, -knockback.x, -knockback.z);
         victim.hurtMarked = true;
     }
 
@@ -680,19 +818,20 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     private void onHitByProjectile(Projectile projectile) {
-        Vec3 flight = projectile.getDeltaMovement();
+        Vec3 flight = SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), projectile.getDeltaMovement());
         double speed = Math.sqrt(flight.x * flight.x + flight.z * flight.z);
         if (speed < 1.0E-4) return;
 
-        applyImpulse(flight.x / speed, flight.z / speed, projectile.getY(), speed * PROJECTILE_MASS_RATIO);
+        double contactY = SubLevelHandler.INSTANCE.toLocalPosition(level(), position(), projectile.position()).y;
+        applyImpulse(flight.x / speed, flight.z / speed, contactY, speed * PROJECTILE_MASS_RATIO);
         playImpactSound(1.0F, false);
     }
 
     private void onHitByAttacker(LivingEntity attacker) {
-        Vec3 look = attacker.getLookAngle();
+        Vec3 look = SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), attacker.getLookAngle());
         double length = Math.sqrt(look.x * look.x + look.z * look.z);
         if (length >= 1.0E-4) {
-            Vec3 eye = attacker.getEyePosition();
+            Vec3 eye = SubLevelHandler.INSTANCE.toLocalPosition(level(), position(), attacker.getEyePosition());
             double contactY = getBoundingBox().clip(eye, eye.add(look.scale(6.0))).map(hit -> hit.y).orElse(getY());
 
             applyImpulse(look.x / length, look.z / length, contactY, HIT_SPECIFIC_IMPULSE);

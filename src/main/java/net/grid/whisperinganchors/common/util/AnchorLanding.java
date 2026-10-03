@@ -1,6 +1,7 @@
 package net.grid.whisperinganchors.common.util;
 
 import net.grid.whisperinganchors.common.core.tag.ModBlockTags;
+import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -61,7 +62,7 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         for (int y = top.getY(); y >= lowest; y--) {
             Vec3 spot = findStandingSpot(level, column.atY(y), traveller);
             if (spot != null) {
-                return Optional.of(withRotationTowardsAnchor(top, spot, traveller));
+                return Optional.of(withRotationTowardsAnchor(level, top, spot, traveller));
             }
         }
 
@@ -84,8 +85,9 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         return level.getBlockStates(room).anyMatch(state -> state.is(ModBlockTags.UNSAFE_TELEPORTS));
     }
 
-    private static AnchorLanding withRotationTowardsAnchor(BlockPos top, Vec3 position, LivingEntity traveller) {
-        Vec3 target = Vec3.atCenterOf(top.below());
+    private static AnchorLanding withRotationTowardsAnchor(ServerLevel level, BlockPos top, Vec3 spot, LivingEntity traveller) {
+        Vec3 target = SubLevelHandler.INSTANCE.toWorldPosition(level, Vec3.atCenterOf(top.below()));
+        Vec3 position = SubLevelHandler.INSTANCE.toWorldPosition(level, spot);
 
         double dx = target.x - position.x;
         double dy = target.y - (position.y + traveller.getEyeHeight());
