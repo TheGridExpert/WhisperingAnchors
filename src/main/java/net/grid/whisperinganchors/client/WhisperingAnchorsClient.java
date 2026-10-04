@@ -27,6 +27,8 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
@@ -34,14 +36,18 @@ import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.event.RegisterRenderBuffersEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
+@Mod(value = WhisperingAnchors.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(modid = WhisperingAnchors.MODID, value = Dist.CLIENT)
 public final class WhisperingAnchorsClient {
 
     public static final ModelResourceLocation ANCHOR_BODY_MODEL = ModelResourceLocation.standalone(WhisperingAnchors.modLoc("block/anchor_body"));
     public static final ModelResourceLocation ANCHOR_CHAIN_MODEL = ModelResourceLocation.standalone(WhisperingAnchors.modLoc("block/anchor_chain"));
 
-    private WhisperingAnchorsClient() {
+    public WhisperingAnchorsClient(ModContainer modContainer) {
+        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
 
     @SubscribeEvent

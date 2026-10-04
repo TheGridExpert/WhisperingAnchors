@@ -8,8 +8,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig.Type;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 @Mod(WhisperingAnchors.MODID)
 public class WhisperingAnchors {
@@ -34,8 +32,6 @@ public class WhisperingAnchors {
         ModIntegration.initializeAll(eventBus);
 
         modContainer.registerConfig(Type.SERVER, ModConfig.serverSpec);
-
-        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
 
     public static ResourceLocation modLoc(String path) {

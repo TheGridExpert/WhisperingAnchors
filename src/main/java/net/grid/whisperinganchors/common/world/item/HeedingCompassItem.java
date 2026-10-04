@@ -1,25 +1,19 @@
 package net.grid.whisperinganchors.common.world.item;
 
-import net.grid.whisperinganchors.client.event.KnownAnchorsScroll;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModStructures;
-import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.grid.whisperinganchors.common.world.item.component.KnownAnchors;
 import net.grid.whisperinganchors.misc.mixin.accessor.SinglePoolElementAccessor;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -27,7 +21,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ChunkPos;
@@ -47,7 +40,6 @@ import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -58,8 +50,6 @@ public class HeedingCompassItem extends AttunableItem {
     public static final int USE_DURATION = 60;
 
     private static final int SEARCH_RADIUS = 100;
-
-    private static final int SHOWN_KNOWN_ANCHORS = 3;
 
     private final Map<LivingEntity, Optional<AnchorAttunement>> pendingSearches = new WeakHashMap<>();
 
@@ -227,51 +217,5 @@ public class HeedingCompassItem extends AttunableItem {
         double x = a.getX() - b.getX();
         double z = a.getZ() - b.getZ();
         return x * x + z * z;
-    }
-
-    @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        Player player = Minecraft.getInstance().player;
-        if (player == null) return;
-
-        KnownAnchors knownAnchors = stack.get(ModDataComponents.KNOWN_ANCHORS);
-        if (knownAnchors == null || knownAnchors.anchors().isEmpty()) return;
-
-        List<AnchorAttunement> sorted = knownAnchors.anchors().stream()
-                .filter(anchor -> anchor.anchorPos().dimension().equals(player.level().dimension()))
-                .sorted(Comparator.comparingDouble(anchor -> getWorldPosition(player.level(), anchor).distanceToSqr(player.position())))
-                .toList();
-        if (sorted.isEmpty()) return;
-
-        int offset = KnownAnchorsScroll.getOffset(stack, sorted.size() - SHOWN_KNOWN_ANCHORS);
-        List<AnchorAttunement> nearest = sorted.subList(offset, Math.min(sorted.size(), offset + SHOWN_KNOWN_ANCHORS));
-
-        List<Component> lines = new ArrayList<>();
-        lines.add(Component.empty());
-        lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchors").withStyle(ChatFormatting.GRAY));
-
-        if (offset > 0) {
-            lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.closer_known_anchors", offset).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
-        }
-
-        for (AnchorAttunement anchor : nearest) {
-            double distance = getWorldPosition(player.level(), anchor).distanceTo(player.position());
-            lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor", anchor.getDisplayName(), formatDistance(distance).withStyle(ChatFormatting.DARK_GRAY)).withStyle(ChatFormatting.GRAY));
-        }
-
-        int hidden = knownAnchors.anchors().size() - offset - nearest.size();
-        if (hidden > 0) {
-            lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.more_known_anchors", hidden).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
-        }
-
-        tooltipComponents.addAll(1, lines);
-    }
-
-    private static Vec3 getWorldPosition(Level level, AnchorAttunement anchor) {
-        return SubLevelHandler.INSTANCE.toWorldPosition(level, Vec3.atCenterOf(anchor.anchorPos().pos()));
-    }
-
-    private static MutableComponent formatDistance(double distance) {
-        return distance < 1000 ? Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor.meters", Mth.floor(distance)) : Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor.kilometers", String.format(Locale.ROOT, "%.1f", distance / 1000));
     }
 }
