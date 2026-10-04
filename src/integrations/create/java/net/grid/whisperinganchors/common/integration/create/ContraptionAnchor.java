@@ -22,6 +22,9 @@ public class ContraptionAnchor {
     private ContraptionAnchor(MovementContext context) {
         this.swing = AnchorEntity.createDetached(context.world);
         this.localSuspension = Vec3.atLowerCornerOf(context.localPos).add(this.swing.getSuspensionPoint());
+        if (context.data.contains(AnchorEntity.KEY_SWING)) {
+            this.swing.readSwing(context.data.getCompound(AnchorEntity.KEY_SWING));
+        }
     }
 
     public static ContraptionAnchor of(MovementContext context) {

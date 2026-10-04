@@ -19,6 +19,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+import java.util.List;
+
 public class AnchorMovementBehaviour implements MovementBehaviour {
 
     public static void register() {
@@ -46,7 +48,18 @@ public class AnchorMovementBehaviour implements MovementBehaviour {
         if (context.world.isClientSide() || !WhisperingAnchorBlock.isPart(context.state, AnchorPart.TOP)) return;
 
         BlockPos top = context.contraption.anchor.offset(context.localPos);
-        AnchorEntity.findBoundTo(context.world, top).forEach(Entity::discard);
+        List<AnchorEntity> anchors = AnchorEntity.findBoundTo(context.world, top);
+        if (!anchors.isEmpty()) {
+            context.data.put(AnchorEntity.KEY_SWING, anchors.getFirst().writeSwing());
+        }
+        anchors.forEach(Entity::discard);
+    }
+
+    @Override
+    public void writeExtraData(MovementContext context) {
+        if (context.temporaryData instanceof ContraptionAnchor anchor) {
+            context.data.put(AnchorEntity.KEY_SWING, anchor.getSwing().writeSwing());
+        }
     }
 
     @Override
