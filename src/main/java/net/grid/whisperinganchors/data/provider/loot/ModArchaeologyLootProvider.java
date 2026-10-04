@@ -46,7 +46,6 @@ public class ModArchaeologyLootProvider implements LootTableSubProvider {
                         .add(stack(Items.COBBLED_DEEPSLATE, 1, 4).setWeight(8))
                         .add(stack(Items.WHEAT, 1, 3).setWeight(6))
                         .add(single(Items.LADDER).setWeight(6))
-                        .add(stack(Items.COBBLED_DEEPSLATE, 1, 3).setWeight(6))
                         .add(stack(Items.DEEPSLATE_TILES, 1, 3).setWeight(6))
                         .add(single(Items.IRON_NUGGET).setWeight(6))
                         .add(single(Items.COAL).setWeight(6))

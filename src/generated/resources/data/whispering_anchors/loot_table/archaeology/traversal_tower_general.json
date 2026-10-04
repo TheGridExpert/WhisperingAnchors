@@ -117,22 +117,6 @@
               "function": "minecraft:set_count"
             }
           ],
-          "name": "minecraft:cobbled_deepslate",
-          "weight": 6
-        },
-        {
-          "type": "minecraft:item",
-          "functions": [
-            {
-              "add": false,
-              "count": {
-                "type": "minecraft:uniform",
-                "max": 3.0,
-                "min": 1.0
-              },
-              "function": "minecraft:set_count"
-            }
-          ],
           "name": "minecraft:deepslate_tiles",
           "weight": 6
         },
