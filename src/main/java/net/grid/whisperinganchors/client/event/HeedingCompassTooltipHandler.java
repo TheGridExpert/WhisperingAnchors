@@ -4,6 +4,7 @@ import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModItems;
 import net.grid.whisperinganchors.common.integration.SubLevelHandler;
+import net.grid.whisperinganchors.common.world.item.HeedingCompassItem;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.grid.whisperinganchors.common.world.item.component.KnownAnchors;
 import net.minecraft.ChatFormatting;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.Locale;
 
 @EventBusSubscriber(modid = WhisperingAnchors.MODID, value = Dist.CLIENT)
-public class KnownAnchorsTooltipHandler {
+public class HeedingCompassTooltipHandler {
 
     private static final int SHOWN_KNOWN_ANCHORS = 3;
     private static final double SCROLL_SPEED = 2.0;
@@ -40,11 +41,19 @@ public class KnownAnchorsTooltipHandler {
     private static double scrolled;
 
     @SubscribeEvent
-    public static void addKnownAnchors(ItemTooltipEvent event) {
+    public static void addCompassInfo(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
         Player player = event.getEntity();
         if (player == null || !stack.is(ModItems.HEEDING_COMPASS)) return;
 
+        List<Component> lines = new ArrayList<>();
+        lines.add(HeedingCompassItem.getMode(stack).getTooltip().copy().withStyle(ChatFormatting.GRAY));
+        addKnownAnchors(lines, stack, player);
+
+        event.getToolTip().addAll(1, lines);
+    }
+
+    private static void addKnownAnchors(List<Component> lines, ItemStack stack, Player player) {
         KnownAnchors knownAnchors = stack.get(ModDataComponents.KNOWN_ANCHORS);
         if (knownAnchors == null || knownAnchors.anchors().isEmpty()) return;
 
@@ -58,7 +67,6 @@ public class KnownAnchorsTooltipHandler {
         int offset = getOffset(stack, sorted.size() - SHOWN_KNOWN_ANCHORS);
         List<AnchorAttunement> nearest = sorted.subList(offset, Math.min(sorted.size(), offset + SHOWN_KNOWN_ANCHORS));
 
-        List<Component> lines = new ArrayList<>();
         lines.add(Component.empty());
         lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchors").withStyle(ChatFormatting.GRAY));
 
@@ -81,8 +89,6 @@ public class KnownAnchorsTooltipHandler {
         if (hidden > 0) {
             lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.more_known_anchors", hidden).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         }
-
-        event.getToolTip().addAll(1, lines);
     }
 
     private static Vec3 getWorldPosition(Level level, AnchorAttunement anchor) {

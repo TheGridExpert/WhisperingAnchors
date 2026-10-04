@@ -61,10 +61,9 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
         ServerLevel level = holderLevel.getServer().getLevel(this.anchorPos.dimension());
         if (level == null) return this;
 
+        if (!exists(level)) return null;
+
         BlockPos pos = this.anchorPos.pos();
-        if (!level.isInWorldBounds(pos) || !level.getPoiManager().existsAtPosition(ModPoiTypes.WHISPERING_ANCHOR.getKey(), pos)) {
-            return null;
-        }
 
         if (!level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof WhisperingAnchorBlockEntity blockEntity)) {
             return this;
@@ -76,5 +75,10 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
         AnchorAttunement current = of(this.anchorPos, anchor);
 
         return current.equals(this) ? this : current;
+    }
+
+    public boolean exists(ServerLevel level) {
+        BlockPos pos = this.anchorPos.pos();
+        return level.isInWorldBounds(pos) && level.getPoiManager().existsAtPosition(ModPoiTypes.WHISPERING_ANCHOR.getKey(), pos);
     }
 }

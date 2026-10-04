@@ -3,8 +3,10 @@ package net.grid.whisperinganchors.common.world.item;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModStructures;
+import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
+import net.grid.whisperinganchors.common.world.item.component.HeedingMode;
 import net.grid.whisperinganchors.common.world.item.component.KnownAnchors;
 import net.grid.whisperinganchors.misc.mixin.accessor.SinglePoolElementAccessor;
 import net.minecraft.core.BlockPos;
@@ -12,7 +14,6 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -40,6 +41,7 @@ import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -63,8 +65,7 @@ public class HeedingCompassItem extends AttunableItem {
         ServerLevel anchorLevel = level.getServer().getLevel(lost.anchorPos().dimension());
         if (anchorLevel == null || !anchorLevel.isLoaded(lost.anchorPos().pos())) return lost;
 
-        BlockPos anchorPos = findUnknownAnchor(level, holder.blockPosition(), stack.getOrDefault(ModDataComponents.KNOWN_ANCHORS, KnownAnchors.EMPTY));
-        return anchorPos == null ? null : attunementAt(level, anchorPos);
+        return findAttunement(level, holder, stack).orElse(null);
     }
 
     @Override
@@ -84,9 +85,18 @@ public class HeedingCompassItem extends AttunableItem {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
 
+        if (player.isSecondaryUseActive()) {
+            if (!level.isClientSide()) {
+                HeedingMode mode = getMode(stack).getNext();
+                stack.set(ModDataComponents.HEEDING_MODE, mode);
+                player.displayClientMessage(mode.getSwitchMessage(), true);
+            }
+
+            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        }
+
         if (level instanceof ServerLevel serverLevel) {
-            BlockPos anchorPos = findUnknownAnchor(serverLevel, player.blockPosition(), stack.getOrDefault(ModDataComponents.KNOWN_ANCHORS, KnownAnchors.EMPTY));
-            this.pendingSearches.put(player, Optional.ofNullable(anchorPos).map(pos -> attunementAt(serverLevel, pos)));
+            this.pendingSearches.put(player, findAttunement(serverLevel, player, stack));
         }
 
         player.startUsingItem(usedHand);
@@ -104,7 +114,7 @@ public class HeedingCompassItem extends AttunableItem {
 
         if (result.isEmpty()) {
             if (livingEntity instanceof Player player) {
-                player.displayClientMessage(Component.translatable("message.whispering_anchors.heeding_compass.cannot_find"), true);
+                player.displayClientMessage(getMode(stack).getNotFoundMessage(), true);
             }
         } else {
             stack.set(ModDataComponents.ANCHOR_ATTUNEMENT, result.get());
@@ -136,6 +146,25 @@ public class HeedingCompassItem extends AttunableItem {
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.CUSTOM;
+    }
+
+    public static HeedingMode getMode(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.HEEDING_MODE, HeedingMode.UNKNOWN_TOWERS);
+    }
+
+    private static Optional<AnchorAttunement> findAttunement(ServerLevel level, Entity holder, ItemStack stack) {
+        KnownAnchors knownAnchors = stack.getOrDefault(ModDataComponents.KNOWN_ANCHORS, KnownAnchors.EMPTY);
+
+        return switch (getMode(stack)) {
+            case UNKNOWN_TOWERS -> Optional.ofNullable(findUnknownAnchor(level, holder.blockPosition(), knownAnchors)).map(pos -> attunementAt(level, pos));
+            case KNOWN_ANCHORS -> findKnownAnchor(level, holder.position(), knownAnchors);
+        };
+    }
+
+    private static Optional<AnchorAttunement> findKnownAnchor(ServerLevel level, Vec3 origin, KnownAnchors knownAnchors) {
+        return knownAnchors.anchors().stream()
+                .filter(anchor -> anchor.anchorPos().dimension().equals(level.dimension()) && anchor.exists(level))
+                .min(Comparator.comparingDouble(anchor -> SubLevelHandler.INSTANCE.toWorldPosition(level, Vec3.atCenterOf(anchor.anchorPos().pos())).distanceToSqr(origin)));
     }
 
     private static @Nullable BlockPos findUnknownAnchor(ServerLevel level, BlockPos origin, KnownAnchors knownAnchors) {

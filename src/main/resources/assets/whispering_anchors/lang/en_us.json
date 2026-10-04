@@ -42,9 +42,14 @@
   "advancement.whispering_anchors.harken_from_alive_dragon.description": "Flee from the End with a Harkening Bell with the dragon still alive",
 
   "message.whispering_anchors.anchor.obstructed": "The whispers of the anchor cannot be harkened: it's obstructed",
-  "message.whispering_anchors.heeding_compass.cannot_find": "The anchors are silent: no unknown towers in a meaningful radius",
+  "message.whispering_anchors.heeding_compass.mode.unknown_towers": "Heeding unknown towers",
+  "message.whispering_anchors.heeding_compass.mode.known_anchors": "Heeding known anchors",
+  "message.whispering_anchors.heeding_compass.cannot_find.unknown_towers": "The anchors are silent: no unknown towers in a meaningful radius",
+  "message.whispering_anchors.heeding_compass.cannot_find.known_anchors": "The anchors are silent: no known anchors in this dimension",
 
   "tooltip.whispering_anchors.harkening_bell.attuned": "Attuned to [%s]",
+  "tooltip.whispering_anchors.heeding_compass.mode.unknown_towers": "Seeking Unknown Towers",
+  "tooltip.whispering_anchors.heeding_compass.mode.known_anchors": "Retracing Known Anchors",
   "tooltip.whispering_anchors.heeding_compass.known_anchors": "Nearest Known Anchors:",
   "tooltip.whispering_anchors.heeding_compass.known_anchor": " [%s] %s",
   "tooltip.whispering_anchors.heeding_compass.known_anchor.meters": "%sm",
