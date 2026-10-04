@@ -2,6 +2,7 @@ package net.grid.whisperinganchors;
 
 import net.grid.whisperinganchors.common.config.ModConfig;
 import net.grid.whisperinganchors.common.core.*;
+import net.grid.whisperinganchors.common.integration.ModIntegration;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -29,6 +30,8 @@ public class WhisperingAnchors {
         ModMapDecorations.register(eventBus);
         ModAdvancements.register(eventBus);
         ModRecipes.register(eventBus);
+
+        ModIntegration.initializeAll(eventBus);
 
         modContainer.registerConfig(Type.SERVER, ModConfig.serverSpec);
 

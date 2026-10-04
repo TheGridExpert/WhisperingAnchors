@@ -42,6 +42,7 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public class AnchorEntity extends Entity implements AnchorIdentity {
 
@@ -254,7 +255,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
                 this.tiltXO = this.tiltX;
                 this.tiltZO = this.tiltZ;
             } else {
-                tickPendulum();
+                tickPendulum(captureFrame());
                 correctTowardsSynced();
             }
         } else {
@@ -283,7 +284,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             }
 
             convertPushToSwing();
-            tickPendulum();
+            tickPendulum(captureFrame());
             collideWithNearbyAnchors();
             syncState();
         }
@@ -405,22 +406,45 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         return (float) Math.asin(Mth.clamp(direction.z, -1.0, 1.0));
     }
 
-    private Vec3 calculateFrameAcceleration(Vec3 suspension) {
+    public static AnchorEntity createDetached(Level level) {
+        AnchorEntity anchor = new AnchorEntity(ModEntities.ANCHOR.get(), level);
+        anchor.setBoundPos(BlockPos.ZERO);
+
+        return anchor;
+    }
+
+    public void tickSwing(SwingFrame frame) {
+        this.chainXO = this.chainX;
+        this.chainZO = this.chainZ;
+        this.tiltXO = this.tiltX;
+        this.tiltZO = this.tiltZ;
+
+        tickPendulum(frame);
+    }
+
+    private SwingFrame captureFrame() {
+        Vec3 suspension = getSuspensionPoint();
         Vec3 velocity = SubLevelHandler.INSTANCE.getVelocity(level(), suspension);
+        Vec3 spin = SubLevelHandler.INSTANCE.getAngularVelocity(level(), suspension);
+
+        return new SwingFrame(velocity, spin, direction -> SubLevelHandler.INSTANCE.toLocalDirection(level(), suspension, direction));
+    }
+
+    private Vec3 calculateFrameAcceleration(Vec3 velocity) {
         Vec3 acceleration = this.lastFrameVelocity == null ? Vec3.ZERO : velocity.subtract(this.lastFrameVelocity);
         this.lastFrameVelocity = velocity;
 
         return acceleration;
     }
 
-    private void applyFrameMotion() {
+    private void applyFrameMotion(SwingFrame frame) {
         Vec3 suspension = getSuspensionPoint();
-        Vec3 spin = SubLevelHandler.INSTANCE.getAngularVelocity(level(), suspension);
+        Vec3 spin = frame.spin();
         Vec3 spinUp = this.lastFrameSpin == null ? Vec3.ZERO : spin.subtract(this.lastFrameSpin);
         this.lastFrameSpin = spin;
 
         Vec3 offset = getCentreOfMass(this.chainX, this.chainZ, this.tiltX, this.tiltZ).subtract(suspension);
-        Vec3 kick = SubLevelHandler.INSTANCE.toLocalDirection(level(), suspension, calculateFrameAcceleration(suspension)).add(spinUp.cross(offset));
+        Vec3 kick = frame.localDirection().apply(calculateFrameAcceleration(frame.velocity())).add(spinUp.cross(offset));
         this.steadyFrameAcceleration = this.steadyFrameAcceleration.add(kick.subtract(this.steadyFrameAcceleration).scale(1.0 / FRAME_SMOOTHING_TICKS));
         Vec3 jolt = kick.subtract(this.steadyFrameAcceleration);
         double joltStrength = jolt.length();
@@ -429,7 +453,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         }
         swingRigidly(jolt.reverse(), offset.length());
 
-        Vec3 pull = GRAVITY_PULL.subtract(this.steadyFrameAcceleration).subtract(spin.cross(spin.cross(offset)));
+        Vec3 pull = frame.localDirection().apply(GRAVITY_PULL).subtract(this.steadyFrameAcceleration).subtract(spin.cross(spin.cross(offset)));
         double strength = pull.length();
         if (!Double.isFinite(strength)) return;
         if (strength < 1.0E-6) {
@@ -477,8 +501,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         this.tiltVelZ -= Math.sin(this.tiltZ) * Math.cos(this.tiltZ) * tiltVelX * tiltVelX;
     }
 
-    private void tickPendulum() {
-        applyFrameMotion();
+    private void tickPendulum(SwingFrame frame) {
+        applyFrameMotion(frame);
         applyOrbitDrive();
 
         double couplingX = this.gravityScale * TILT_RESTORING * Math.sin(this.chainX - this.tiltX);
@@ -958,5 +982,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         if (color != null) {
             tag.putString(KEY_COLOR, color.getName());
         }
+    }
+
+    public record SwingFrame(Vec3 velocity, Vec3 spin, UnaryOperator<Vec3> localDirection) {
     }
 }

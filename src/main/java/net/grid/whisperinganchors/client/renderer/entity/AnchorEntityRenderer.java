@@ -20,32 +20,33 @@ public class AnchorEntityRenderer extends EntityRenderer<AnchorEntity> {
 
     @Override
     public void render(AnchorEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        float chainX = entity.getChainX(partialTick);
-        float chainZ = entity.getChainZ(partialTick);
-
-        double originX = Mth.lerp(partialTick, entity.xOld, entity.getX());
-        double originY = Mth.lerp(partialTick, entity.yOld, entity.getY());
-        double originZ = Mth.lerp(partialTick, entity.zOld, entity.getZ());
-        Vec3 suspension = entity.getSuspensionPoint();
-        Vec3 shackle = entity.getShacklePos(chainX, chainZ);
-
+        Vec3 origin = new Vec3(Mth.lerp(partialTick, entity.xOld, entity.getX()), Mth.lerp(partialTick, entity.yOld, entity.getY()), Mth.lerp(partialTick, entity.zOld, entity.getZ()));
         int destroyStage = AnchorModelRenderer.getDestroyStage(entity.getBoundPos(), true);
 
+        renderSwing(entity, origin, entity.getFacingYaw(), partialTick, poseStack, bufferSource, packedLight, destroyStage);
+
+        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+    }
+
+    public static void renderSwing(AnchorEntity entity, Vec3 origin, float facingYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int destroyStage) {
+        float chainX = entity.getChainX(partialTick);
+        float chainZ = entity.getChainZ(partialTick);
+        Vec3 suspension = entity.getSuspensionPoint().subtract(origin);
+        Vec3 shackle = entity.getShacklePos(chainX, chainZ).subtract(origin);
+
         poseStack.pushPose();
-        poseStack.translate(suspension.x - originX, suspension.y - originY, suspension.z - originZ);
+        poseStack.translate(suspension.x, suspension.y, suspension.z);
         poseStack.mulPose(Axis.ZP.rotation(chainX));
         poseStack.mulPose(Axis.XP.rotation(-chainZ));
         AnchorModelRenderer.renderChain(poseStack, bufferSource, packedLight, destroyStage);
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.translate(shackle.x - originX, shackle.y - originY, shackle.z - originZ);
+        poseStack.translate(shackle.x, shackle.y, shackle.z);
         poseStack.mulPose(Axis.ZP.rotation(entity.getTiltX(partialTick)));
         poseStack.mulPose(Axis.XP.rotation(-entity.getTiltZ(partialTick)));
-        AnchorModelRenderer.renderBody(poseStack, bufferSource, packedLight, destroyStage, entity.getFacingYaw());
+        AnchorModelRenderer.renderBody(poseStack, bufferSource, packedLight, destroyStage, facingYaw);
         poseStack.popPose();
-
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     }
 
     @Override

@@ -27,8 +27,9 @@ sourceSets.main.resources {
 
 def jeiEnabled = providers.gradleProperty('jei_enabled').map { it.toBoolean() }.getOrElse(false)
 def sableEnabled = providers.gradleProperty('sable_enabled').map { it.toBoolean() }.getOrElse(false)
+def createEnabled = providers.gradleProperty('create_enabled').map { it.toBoolean() }.getOrElse(false)
 
-[jei: jeiEnabled, sable: sableEnabled].each { integration, enabled ->
+[jei: jeiEnabled, sable: sableEnabled, create: createEnabled].each { integration, enabled ->
     if (enabled) {
         sourceSets.main.java.srcDir("src/integrations/${integration}/java")
         sourceSets.main.resources.srcDir("src/integrations/${integration}/resources")
@@ -135,6 +136,31 @@ repositories {
         name = "ModMaven"
         url = "https://modmaven.dev"
     }
+    // Create
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Create Maven"
+                url = "https://maven.createmod.net"
+            }
+        }
+        filter {
+            includeGroup("com.simibubi.create")
+            includeGroup("net.createmod.ponder")
+            includeGroup("dev.engine-room.flywheel")
+        }
+    }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Registrate Maven"
+                url = "https://maven.ithundxr.dev/snapshots"
+            }
+        }
+        filter {
+            includeGroup("com.tterrag.registrate")
+        }
+    }
     // Sable
     exclusiveContent {
         forRepository {
@@ -154,6 +180,13 @@ dependencies {
     if (jeiEnabled) {
         compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
         localRuntime("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
+    }
+
+    if (createEnabled) {
+        compileOnly("com.simibubi.create:create-${minecraft_version}:${create_version}") { transitive = false }
+        compileOnly("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}") { transitive = false }
+        compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}") { transitive = false }
+        compileOnly("com.tterrag.registrate:Registrate:${registrate_version}") { transitive = false }
     }
 
     if (sableEnabled) {
