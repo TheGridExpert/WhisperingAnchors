@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 
 public interface AnchorMarkerData {
 
-    boolean whisperingAnchors$toggleAnchor(Level level, BlockPos top);
+    boolean whispering_anchors$toggleAnchor(Level level, BlockPos top);
 
-    void whisperingAnchors$addAnchor(AnchorMarker marker, @Nullable LevelAccessor level);
+    void whispering_anchors$addAnchor(AnchorMarker marker, @Nullable LevelAccessor level);
 }

@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ItemRendererMixin {
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/ItemRenderer;getFoilBufferDirect(Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/renderer/RenderType;ZZ)Lcom/mojang/blaze3d/vertex/VertexConsumer;"))
-    private VertexConsumer whisperingAnchors$bellFoilDirect(MultiBufferSource bufferSource, RenderType renderType, boolean isItem, boolean hasFoil, ItemStack stack, ItemDisplayContext displayContext, boolean leftHand, PoseStack poseStack, MultiBufferSource unused, int packedLight, int packedOverlay, BakedModel model) {
+    private VertexConsumer whispering_anchors$bellFoilDirect(MultiBufferSource bufferSource, RenderType renderType, boolean isItem, boolean hasFoil, ItemStack stack, ItemDisplayContext displayContext, boolean leftHand, PoseStack poseStack, MultiBufferSource unused, int packedLight, int packedOverlay, BakedModel model) {
         if (!hasFoil || !isItem || !stack.has(ModDataComponents.ANCHOR_ATTUNEMENT)) {
             return ItemRenderer.getFoilBufferDirect(bufferSource, renderType, isItem, hasFoil);
         }
@@ -31,7 +31,7 @@ public class ItemRendererMixin {
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/ItemRenderer;renderModelLists(Lnet/minecraft/client/resources/model/BakedModel;Lnet/minecraft/world/item/ItemStack;IILcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;)V", shift = At.Shift.AFTER))
-    private void whisperingAnchors$renderBellOverlay(ItemStack stack, ItemDisplayContext displayContext, boolean leftHand, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay, BakedModel model, CallbackInfo ci) {
+    private void whispering_anchors$renderBellOverlay(ItemStack stack, ItemDisplayContext displayContext, boolean leftHand, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay, BakedModel model, CallbackInfo ci) {
         BellOverlay.render(stack, poseStack, bufferSource, packedLight, packedOverlay);
     }
 }

@@ -47,7 +47,7 @@ public abstract class MapItemSavedDataMixin implements AnchorMarkerData {
     @Shadow @Final Map<String, MapDecoration> decorations;
 
     @Unique
-    private final Map<String, AnchorMarker> whisperingAnchors$anchorMarkers = new HashMap<>();
+    private final Map<String, AnchorMarker> whispering_anchors$anchorMarkers = new HashMap<>();
 
     @Shadow
     public abstract void addDecoration(Holder<MapDecorationType> decorationType, @Nullable LevelAccessor level, String id, double x, double z, double yRot, @Nullable Component displayName);
@@ -59,32 +59,32 @@ public abstract class MapItemSavedDataMixin implements AnchorMarkerData {
     public abstract boolean isTrackedCountOverLimit(int trackedCount);
 
     @Inject(method = "load", at = @At("RETURN"))
-    private static void whisperingAnchors$loadAnchors(CompoundTag tag, HolderLookup.Provider registries, CallbackInfoReturnable<MapItemSavedData> cir) {
+    private static void whispering_anchors$loadAnchors(CompoundTag tag, HolderLookup.Provider registries, CallbackInfoReturnable<MapItemSavedData> cir) {
         if (!tag.contains(WHISPERING_ANCHORS$ANCHORS_KEY)) return;
 
         AnchorMarkerData data = (AnchorMarkerData) cir.getReturnValue();
         AnchorMarker.LIST_CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), tag.get(WHISPERING_ANCHORS$ANCHORS_KEY))
                 .resultOrPartial(error -> LOGGER.warn("Failed to parse map anchor: '{}'", error))
                 .orElse(List.of())
-                .forEach(marker -> data.whisperingAnchors$addAnchor(marker, null));
+                .forEach(marker -> data.whispering_anchors$addAnchor(marker, null));
     }
 
     @Inject(method = "save", at = @At("RETURN"))
-    private void whisperingAnchors$saveAnchors(CompoundTag tag, HolderLookup.Provider registries, CallbackInfoReturnable<CompoundTag> cir) {
-        if (this.whisperingAnchors$anchorMarkers.isEmpty()) return;
+    private void whispering_anchors$saveAnchors(CompoundTag tag, HolderLookup.Provider registries, CallbackInfoReturnable<CompoundTag> cir) {
+        if (this.whispering_anchors$anchorMarkers.isEmpty()) return;
 
-        tag.put(WHISPERING_ANCHORS$ANCHORS_KEY, AnchorMarker.LIST_CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), List.copyOf(this.whisperingAnchors$anchorMarkers.values())).getOrThrow());
+        tag.put(WHISPERING_ANCHORS$ANCHORS_KEY, AnchorMarker.LIST_CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), List.copyOf(this.whispering_anchors$anchorMarkers.values())).getOrThrow());
     }
 
     @Inject(method = "locked", at = @At("RETURN"))
-    private void whisperingAnchors$copyAnchors(CallbackInfoReturnable<MapItemSavedData> cir) {
+    private void whispering_anchors$copyAnchors(CallbackInfoReturnable<MapItemSavedData> cir) {
         AnchorMarkerData copy = (AnchorMarkerData) cir.getReturnValue();
-        this.whisperingAnchors$anchorMarkers.values().forEach(marker -> copy.whisperingAnchors$addAnchor(marker, null));
+        this.whispering_anchors$anchorMarkers.values().forEach(marker -> copy.whispering_anchors$addAnchor(marker, null));
     }
 
     @Inject(method = "checkBanners", at = @At("TAIL"))
-    private void whisperingAnchors$checkAnchors(BlockGetter reader, int x, int z, CallbackInfo ci) {
-        Iterator<Map.Entry<String, AnchorMarker>> iterator = this.whisperingAnchors$anchorMarkers.entrySet().iterator();
+    private void whispering_anchors$checkAnchors(BlockGetter reader, int x, int z, CallbackInfo ci) {
+        Iterator<Map.Entry<String, AnchorMarker>> iterator = this.whispering_anchors$anchorMarkers.entrySet().iterator();
 
         while (iterator.hasNext()) {
             Map.Entry<String, AnchorMarker> entry = iterator.next();
@@ -105,13 +105,13 @@ public abstract class MapItemSavedDataMixin implements AnchorMarkerData {
             AnchorMarker current = AnchorMarker.of(pos, anchor);
             if (!current.equals(entry.getValue())) {
                 entry.setValue(current);
-                whisperingAnchors$decorate(current, level);
+                whispering_anchors$decorate(current, level);
             }
         }
     }
 
     @Override
-    public boolean whisperingAnchors$toggleAnchor(Level level, BlockPos top) {
+    public boolean whispering_anchors$toggleAnchor(Level level, BlockPos top) {
         if (level.dimension() != this.dimension) return false;
 
         int scaleFactor = 1 << this.scale;
@@ -121,25 +121,25 @@ public abstract class MapItemSavedDataMixin implements AnchorMarkerData {
         if (!AnchorMarker.isAnchor(level, top)) return false;
 
         AnchorMarker marker = AnchorMarker.of(top, AnchorIdentity.find(level, top));
-        if (this.whisperingAnchors$anchorMarkers.remove(marker.getId()) != null) {
+        if (this.whispering_anchors$anchorMarkers.remove(marker.getId()) != null) {
             removeDecoration(marker.getId());
             return true;
         }
 
         if (isTrackedCountOverLimit(MapItemSavedData.TRACKED_DECORATION_LIMIT)) return false;
 
-        whisperingAnchors$addAnchor(marker, level);
+        whispering_anchors$addAnchor(marker, level);
         return true;
     }
 
     @Override
-    public void whisperingAnchors$addAnchor(AnchorMarker marker, @Nullable LevelAccessor level) {
-        this.whisperingAnchors$anchorMarkers.put(marker.getId(), marker);
-        whisperingAnchors$decorate(marker, level);
+    public void whispering_anchors$addAnchor(AnchorMarker marker, @Nullable LevelAccessor level) {
+        this.whispering_anchors$anchorMarkers.put(marker.getId(), marker);
+        whispering_anchors$decorate(marker, level);
     }
 
     @Unique
-    private void whisperingAnchors$decorate(AnchorMarker marker, @Nullable LevelAccessor level) {
+    private void whispering_anchors$decorate(AnchorMarker marker, @Nullable LevelAccessor level) {
         addDecoration(marker.getDecoration(), level, marker.getId(), marker.pos().getX() + 0.5, marker.pos().getZ() + 0.5, 180.0, marker.name().orElse(null));
 
         MapDecoration decoration = this.decorations.get(marker.getId());

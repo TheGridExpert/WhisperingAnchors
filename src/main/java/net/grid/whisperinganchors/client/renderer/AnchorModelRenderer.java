@@ -55,7 +55,7 @@ public final class AnchorModelRenderer {
     }
 
     public static int getDestroyStage(BlockPos top, boolean includeTop) {
-        Long2ObjectMap<SortedSet<BlockDestructionProgress>> destruction = ((LevelRendererAccessor) Minecraft.getInstance().levelRenderer).getDestructionProgress();
+        Long2ObjectMap<SortedSet<BlockDestructionProgress>> destruction = ((LevelRendererAccessor) Minecraft.getInstance().levelRenderer).whispering_anchors$getDestructionProgress();
         if (destruction.isEmpty()) return INTACT;
 
         int stage = INTACT;

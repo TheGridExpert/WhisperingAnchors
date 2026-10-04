@@ -178,7 +178,7 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
     private static ItemInteractionResult toggleMapMarker(ItemStack stack, Level level, BlockPos top) {
         if (!level.isClientSide) {
             MapItemSavedData data = MapItem.getSavedData(stack, level);
-            if (data != null && !((AnchorMarkerData) data).whisperingAnchors$toggleAnchor(level, top)) {
+            if (data != null && !((AnchorMarkerData) data).whispering_anchors$toggleAnchor(level, top)) {
                 return ItemInteractionResult.FAIL;
             }
         }

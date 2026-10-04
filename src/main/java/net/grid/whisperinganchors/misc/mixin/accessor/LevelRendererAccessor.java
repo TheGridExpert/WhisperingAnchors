@@ -12,5 +12,5 @@ import java.util.SortedSet;
 public interface LevelRendererAccessor {
 
     @Accessor("destructionProgress")
-    Long2ObjectMap<SortedSet<BlockDestructionProgress>> getDestructionProgress();
+    Long2ObjectMap<SortedSet<BlockDestructionProgress>> whispering_anchors$getDestructionProgress();
 }
