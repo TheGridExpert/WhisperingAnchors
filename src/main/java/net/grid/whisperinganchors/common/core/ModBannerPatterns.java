@@ -6,7 +6,7 @@ import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.entity.BannerPattern;
 
-public class ModBannerPatters {
+public class ModBannerPatterns {
 
     public static final ResourceKey<BannerPattern> ANCHOR = ResourceKey.create(Registries.BANNER_PATTERN, WhisperingAnchors.modLoc("anchor"));
 

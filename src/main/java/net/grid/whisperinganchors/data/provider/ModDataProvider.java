@@ -1,7 +1,7 @@
 package net.grid.whisperinganchors.data.provider;
 
 import net.grid.whisperinganchors.WhisperingAnchors;
-import net.grid.whisperinganchors.common.core.ModBannerPatters;
+import net.grid.whisperinganchors.common.core.ModBannerPatterns;
 import net.grid.whisperinganchors.common.core.ModDamageTypes;
 import net.grid.whisperinganchors.common.core.ModProcessorLists;
 import net.grid.whisperinganchors.common.core.ModStructureSets;
@@ -33,7 +33,7 @@ public class ModDataProvider {
 
     private static final RegistrySetBuilder DATA_BUILDER = new RegistrySetBuilder()
             .add(Registries.DAMAGE_TYPE, ModDamageTypes::bootstrap)
-            .add(Registries.BANNER_PATTERN, ModBannerPatters::bootstrap)
+            .add(Registries.BANNER_PATTERN, ModBannerPatterns::bootstrap)
             .add(Registries.PROCESSOR_LIST, ModProcessorLists::bootstrap)
             .add(Registries.TEMPLATE_POOL, ModTemplatePools::bootstrap)
             .add(Registries.STRUCTURE, ModStructures::bootstrap)

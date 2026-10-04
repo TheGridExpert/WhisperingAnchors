@@ -1,7 +1,7 @@
 package net.grid.whisperinganchors.data.provider.tag;
 
 import net.grid.whisperinganchors.WhisperingAnchors;
-import net.grid.whisperinganchors.common.core.ModBannerPatters;
+import net.grid.whisperinganchors.common.core.ModBannerPatterns;
 import net.grid.whisperinganchors.common.core.tag.ModBannerPatternTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -19,6 +19,6 @@ public class ModBannerPatternTagsProvider extends BannerPatternTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        tag(ModBannerPatternTags.PATTERN_ITEM_ANCHOR).add(ModBannerPatters.ANCHOR);
+        tag(ModBannerPatternTags.PATTERN_ITEM_ANCHOR).add(ModBannerPatterns.ANCHOR);
     }
 }
