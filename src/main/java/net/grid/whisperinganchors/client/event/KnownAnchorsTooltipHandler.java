@@ -10,6 +10,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
@@ -47,11 +48,12 @@ public final class KnownAnchorsTooltipHandler {
         KnownAnchors knownAnchors = stack.get(ModDataComponents.KNOWN_ANCHORS);
         if (knownAnchors == null || knownAnchors.anchors().isEmpty()) return;
 
+        Level level = player.level();
         List<AnchorAttunement> sorted = knownAnchors.anchors().stream()
-                .filter(anchor -> anchor.anchorPos().dimension().equals(player.level().dimension()))
-                .sorted(Comparator.comparingDouble(anchor -> getWorldPosition(player.level(), anchor).distanceToSqr(player.position())))
+                .sorted(Comparator.<AnchorAttunement>comparingInt(anchor -> isIn(level, anchor) ? -1 : getDimensionPriority(anchor.anchorPos().dimension()))
+                        .thenComparing(anchor -> anchor.anchorPos().dimension().location().toString())
+                        .thenComparingDouble(anchor -> isIn(level, anchor) ? getWorldPosition(level, anchor).distanceToSqr(player.position()) : 0.0))
                 .toList();
-        if (sorted.isEmpty()) return;
 
         int offset = getOffset(stack, sorted.size() - SHOWN_KNOWN_ANCHORS);
         List<AnchorAttunement> nearest = sorted.subList(offset, Math.min(sorted.size(), offset + SHOWN_KNOWN_ANCHORS));
@@ -65,11 +67,17 @@ public final class KnownAnchorsTooltipHandler {
         }
 
         for (AnchorAttunement anchor : nearest) {
-            double distance = getWorldPosition(player.level(), anchor).distanceTo(player.position());
-            lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor", anchor.getDisplayName(), formatDistance(distance).withStyle(ChatFormatting.DARK_GRAY)).withStyle(ChatFormatting.GRAY));
+            boolean here = isIn(level, anchor);
+            MutableComponent distance = formatDistance(here ? getWorldPosition(level, anchor).distanceTo(player.position()) : Vec3.atCenterOf(anchor.anchorPos().pos()).distanceTo(player.position())).withStyle(ChatFormatting.DARK_GRAY);
+            MutableComponent name = anchor.getDisplayName().copy();
+            if (!here) {
+                distance.withStyle(ChatFormatting.OBFUSCATED);
+                name.withStyle(ChatFormatting.STRIKETHROUGH);
+            }
+            lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor", name, distance).withStyle(ChatFormatting.GRAY));
         }
 
-        int hidden = knownAnchors.anchors().size() - offset - nearest.size();
+        int hidden = sorted.size() - offset - nearest.size();
         if (hidden > 0) {
             lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.more_known_anchors", hidden).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         }
@@ -79,6 +87,17 @@ public final class KnownAnchorsTooltipHandler {
 
     private static Vec3 getWorldPosition(Level level, AnchorAttunement anchor) {
         return SubLevelHandler.INSTANCE.toWorldPosition(level, Vec3.atCenterOf(anchor.anchorPos().pos()));
+    }
+
+    private static boolean isIn(Level level, AnchorAttunement anchor) {
+        return anchor.anchorPos().dimension().equals(level.dimension());
+    }
+
+    private static int getDimensionPriority(ResourceKey<Level> dimension) {
+        if (dimension.equals(Level.OVERWORLD)) return 0;
+        if (dimension.equals(Level.NETHER)) return 1;
+        if (dimension.equals(Level.END)) return 2;
+        return 3;
     }
 
     private static MutableComponent formatDistance(double distance) {
