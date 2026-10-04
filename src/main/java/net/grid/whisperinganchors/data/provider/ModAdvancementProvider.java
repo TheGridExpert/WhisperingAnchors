@@ -49,12 +49,12 @@ public class ModAdvancementProvider extends AdvancementProvider {
                 .addCriterion("harken", HarkeningTrigger.TriggerInstance.harkenSavingFromFalling())
                 .save(consumer, WhisperingAnchors.modLoc("adventure/harken_from_falling"), existingFileHelper);
         Advancement.Builder.advancement()
-                .display(ModItems.HARKENING_BELL.toStack(), Component.translatable("advancement.whispering_anchors.harken_from_all_dimentions.title"), Component.translatable("advancement.whispering_anchors.harken_from_all_dimentions.description"), null, AdvancementType.CHALLENGE, true, true, false)
+                .display(ModItems.HARKENING_BELL.toStack(), Component.translatable("advancement.whispering_anchors.harken_from_all_dimensions.title"), Component.translatable("advancement.whispering_anchors.harken_from_all_dimensions.description"), null, AdvancementType.CHALLENGE, true, true, false)
                 .parent(ResourceLocation.withDefaultNamespace("nether/use_lodestone"))
                 .addCriterion("harken_overworld", HarkeningTrigger.TriggerInstance.harkenedFrom(Level.OVERWORLD))
                 .addCriterion("harken_nether", HarkeningTrigger.TriggerInstance.harkenedFrom(Level.NETHER))
                 .addCriterion("harken_end", HarkeningTrigger.TriggerInstance.harkenedFrom(Level.END))
-                .save(consumer, WhisperingAnchors.modLoc("nether/harken_from_all_dimentions"), existingFileHelper);
+                .save(consumer, WhisperingAnchors.modLoc("nether/harken_from_all_dimensions"), existingFileHelper);
         Advancement.Builder.advancement()
                 .display(ModItems.HARKENING_BELL.toStack(), Component.translatable("advancement.whispering_anchors.harken_from_alive_dragon.title"), Component.translatable("advancement.whispering_anchors.harken_from_alive_dragon.description"), null, AdvancementType.TASK, true, true, false)
                 .parent(ResourceLocation.withDefaultNamespace("end/root"))
