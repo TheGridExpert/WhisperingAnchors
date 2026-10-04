@@ -1,5 +1,6 @@
 package net.grid.whisperinganchors.client.particle;
 
+import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.particle.HarkeningSoulParticleOption;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
@@ -8,6 +9,7 @@ import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class HarkeningSoulParticle extends TextureSheetParticle {
 
@@ -80,7 +82,9 @@ public class HarkeningSoulParticle extends TextureSheetParticle {
     private void moveAlongSpiral() {
         float progress = (float) this.age / this.lifetime;
         double currentRadius = this.radius * (1.0F - TIGHTENING * progress) + WOBBLE * Mth.sin(this.age * WOBBLE_RATE + this.phase);
-        setPos(this.centreX + currentRadius * Mth.cos(this.angle), this.baseY + this.height, this.centreZ + currentRadius * Mth.sin(this.angle));
+        Vec3 local = new Vec3(this.centreX + currentRadius * Mth.cos(this.angle), this.baseY + this.height, this.centreZ + currentRadius * Mth.sin(this.angle));
+        Vec3 world = SubLevelHandler.INSTANCE.toWorldPosition(this.level, local);
+        setPos(world.x, world.y, world.z);
     }
 
     @Override
