@@ -94,8 +94,8 @@ public record AnchorLanding(Vec3 position, float yRot, float xRot) {
         double dz = target.z - position.z;
         double horizontal = Math.sqrt(dx * dx + dz * dz);
 
-        float yRot = Mth.wrapDegrees((float) (Mth.atan2(dz, dx) * (180.0 / Math.PI)) - 90.0F);
-        float xRot = Mth.wrapDegrees((float) (-(Mth.atan2(dy, horizontal) * (180.0 / Math.PI))));
+        float yRot = Mth.wrapDegrees((float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0F);
+        float xRot = Mth.wrapDegrees((float) (-(Mth.atan2(dy, horizontal) * Mth.RAD_TO_DEG)));
 
         return new AnchorLanding(position, yRot, xRot);
     }

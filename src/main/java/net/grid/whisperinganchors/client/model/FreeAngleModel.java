@@ -23,6 +23,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.neoforged.neoforge.client.RenderTypeGroup;
 import org.joml.Matrix4f;
@@ -48,7 +49,6 @@ public final class FreeAngleModel {
     private static final FaceBakery FACE_BAKERY = new FaceBakery();
     private static final ModelState IDENTITY = new FixedRotation(Transformation.identity());
 
-    private static final float DEGREES_TO_RADIANS = (float) (Math.PI / 180.0);
     private static final int MAX_TEXTURE_INDIRECTION = 8;
 
     private FreeAngleModel() {
@@ -166,11 +166,11 @@ public final class FreeAngleModel {
 
             Matrix4f matrix = new Matrix4f().translate(ox, oy, oz);
             if (this.rescale && isSingleAxis()) {
-                float scale = 1.0F / (float) Math.cos(getDominantAngle() * DEGREES_TO_RADIANS);
+                float scale = 1.0F / (float) Math.cos(getDominantAngle() * Mth.DEG_TO_RAD);
                 matrix.scale(this.x == 0.0F ? scale : 1.0F, this.y == 0.0F ? scale : 1.0F, this.z == 0.0F ? scale : 1.0F);
             }
 
-            matrix.rotateXYZ(this.x * DEGREES_TO_RADIANS, this.y * DEGREES_TO_RADIANS, this.z * DEGREES_TO_RADIANS);
+            matrix.rotateXYZ(this.x * Mth.DEG_TO_RAD, this.y * Mth.DEG_TO_RAD, this.z * Mth.DEG_TO_RAD);
             matrix.translate(-ox, -oy, -oz);
 
             return new Transformation(matrix);

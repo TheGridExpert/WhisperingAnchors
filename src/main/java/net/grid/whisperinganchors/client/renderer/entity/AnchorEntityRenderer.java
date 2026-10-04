@@ -8,7 +8,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.phys.Vec3;
 
@@ -20,7 +19,7 @@ public class AnchorEntityRenderer extends EntityRenderer<AnchorEntity> {
 
     @Override
     public void render(AnchorEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        Vec3 origin = new Vec3(Mth.lerp(partialTick, entity.xOld, entity.getX()), Mth.lerp(partialTick, entity.yOld, entity.getY()), Mth.lerp(partialTick, entity.zOld, entity.getZ()));
+        Vec3 origin = entity.getPosition(partialTick);
         int destroyStage = AnchorModelRenderer.getDestroyStage(entity.getBoundPos(), true);
 
         renderSwing(entity, origin, entity.getFacingYaw(), partialTick, poseStack, bufferSource, packedLight, destroyStage);
