@@ -55,9 +55,16 @@ public class AnchorMovementBehaviour implements MovementBehaviour {
 
     @Override
     public void tick(MovementContext context) {
-        if (!context.world.isClientSide() || !isSwinging(context.state)) return;
+        if (!isSwinging(context.state)) return;
 
         ContraptionAnchor.of(context).tick(context);
+    }
+
+    @Override
+    public void stopMoving(MovementContext context) {
+        if (context.world.isClientSide() || !isSwinging(context.state) || !(context.temporaryData instanceof ContraptionAnchor anchor)) return;
+
+        anchor.transferSwing(context);
     }
 
     @Override

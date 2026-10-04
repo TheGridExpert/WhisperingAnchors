@@ -57,6 +57,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     public static final String KEY_CHAIN_VELOCITY_Z = "ChainVelocityZ";
     public static final String KEY_TILT_VELOCITY_X = "TiltVelocityX";
     public static final String KEY_TILT_VELOCITY_Z = "TiltVelocityZ";
+    public static final String KEY_SWING = "Swing";
 
     public static final int UNDYED = -1;
 
@@ -174,12 +175,15 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         super(type, level);
     }
 
-    public @Nullable static AnchorEntity spawnFor(ServerLevel level, BlockPos topPos) {
+    public @Nullable static AnchorEntity spawnFor(ServerLevel level, BlockPos topPos, @Nullable CompoundTag swing) {
         AnchorEntity anchor = ModEntities.ANCHOR.get().create(level);
         if (anchor == null) return null;
 
         anchor.setBoundPos(topPos);
-        anchor.setPos(anchor.getCentreOfMass(0.0F, 0.0F, 0.0F, 0.0F));
+        if (swing != null) {
+            anchor.readSwing(swing);
+        }
+        anchor.setPos(anchor.getCentreOfMass(anchor.chainX, anchor.chainZ, anchor.tiltX, anchor.tiltZ));
         level.addFreshEntity(anchor);
 
         return anchor;
@@ -467,14 +471,50 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         this.restZ = toAngleZ(this.localDown);
     }
 
+    private static Vec3 getSwingAlongX(float angleX, float angleZ) {
+        double cosZ = Math.cos(angleZ);
+        return new Vec3(Math.cos(angleX) * cosZ, Math.sin(angleX) * cosZ, 0.0);
+    }
+
+    private static Vec3 getSwingAlongZ(float angleX, float angleZ) {
+        return new Vec3(-Math.sin(angleX) * Math.sin(angleZ), Math.cos(angleX) * Math.sin(angleZ), Math.cos(angleZ));
+    }
+
+    public void addSwingVelocity(Vec3 velocity) {
+        swingRigidly(velocity, getCentreOfMass(this.chainX, this.chainZ, this.tiltX, this.tiltZ).subtract(getSuspensionPoint()).length());
+    }
+
+    public void transformSwing(UnaryOperator<Vec3> rotation) {
+        double[] chain = transformSwingPart(rotation, this.chainX, this.chainZ, this.chainVelX, this.chainVelZ);
+        double[] tilt = transformSwingPart(rotation, this.tiltX, this.tiltZ, this.tiltVelX, this.tiltVelZ);
+
+        this.chainXO = this.chainX = (float) chain[0];
+        this.chainZO = this.chainZ = (float) chain[1];
+        this.chainVelX = chain[2];
+        this.chainVelZ = chain[3];
+        this.tiltXO = this.tiltX = (float) tilt[0];
+        this.tiltZO = this.tiltZ = (float) tilt[1];
+        this.tiltVelX = tilt[2];
+        this.tiltVelZ = tilt[3];
+    }
+
+    private static double[] transformSwingPart(UnaryOperator<Vec3> rotation, float angleX, float angleZ, double velX, double velZ) {
+        Vec3 direction = rotation.apply(calculatePendulumOffset(1.0, angleX, angleZ));
+        Vec3 motion = rotation.apply(getSwingAlongX(angleX, angleZ).scale(velX).add(getSwingAlongZ(angleX, angleZ).scale(velZ)));
+
+        float newX = toAngleX(direction, angleX);
+        float newZ = toAngleZ(direction);
+        double cosZ = Math.max(Math.cos(newZ), 1.0E-3);
+
+        return new double[] { newX, newZ, motion.dot(getSwingAlongX(newX, newZ)) / (cosZ * cosZ), motion.dot(getSwingAlongZ(newX, newZ)) };
+    }
+
     private void swingRigidly(Vec3 velocityChange, double reach) {
         if (reach < 1.0E-4 || velocityChange.lengthSqr() < 1.0E-12) return;
 
         double cosZ = Math.cos(this.tiltZ);
-        Vec3 alongX = new Vec3(Math.cos(this.tiltX) * cosZ, Math.sin(this.tiltX) * cosZ, 0.0);
-        Vec3 alongZ = new Vec3(-Math.sin(this.tiltX) * Math.sin(this.tiltZ), Math.cos(this.tiltX) * Math.sin(this.tiltZ), cosZ);
-        double deltaX = velocityChange.dot(alongX) / (reach * cosZ * cosZ);
-        double deltaZ = velocityChange.dot(alongZ) / reach;
+        double deltaX = velocityChange.dot(getSwingAlongX(this.tiltX, this.tiltZ)) / (reach * cosZ * cosZ);
+        double deltaZ = velocityChange.dot(getSwingAlongZ(this.tiltX, this.tiltZ)) / reach;
 
         this.chainVelX += deltaX;
         this.chainVelZ += deltaZ;
@@ -947,6 +987,11 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         setBoundPos(BlockPos.of(tag.getLong(KEY_BOUND_POS)));
+        readSwing(tag);
+        setColor(tag.contains(KEY_COLOR) ? DyeColor.byName(tag.getString(KEY_COLOR), null) : null);
+    }
+
+    public void readSwing(CompoundTag tag) {
         this.chainXO = this.chainX = tag.getFloat(KEY_CHAIN_X);
         this.chainZO = this.chainZ = tag.getFloat(KEY_CHAIN_Z);
         this.tiltXO = this.tiltX = tag.getFloat(KEY_TILT_X);
@@ -963,12 +1008,20 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         this.entityData.set(DATA_CHAIN_VELOCITY_Z, (float) this.chainVelZ);
         this.entityData.set(DATA_TILT_VELOCITY_X, (float) this.tiltVelX);
         this.entityData.set(DATA_TILT_VELOCITY_Z, (float) this.tiltVelZ);
-        setColor(tag.contains(KEY_COLOR) ? DyeColor.byName(tag.getString(KEY_COLOR), null) : null);
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putLong(KEY_BOUND_POS, getBoundPos().asLong());
+        writeSwing(tag);
+
+        DyeColor color = getColor();
+        if (color != null) {
+            tag.putString(KEY_COLOR, color.getName());
+        }
+    }
+
+    public CompoundTag writeSwing(CompoundTag tag) {
         tag.putFloat(KEY_CHAIN_X, this.chainX);
         tag.putFloat(KEY_CHAIN_Z, this.chainZ);
         tag.putFloat(KEY_TILT_X, this.tiltX);
@@ -978,10 +1031,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         tag.putDouble(KEY_TILT_VELOCITY_X, this.tiltVelX);
         tag.putDouble(KEY_TILT_VELOCITY_Z, this.tiltVelZ);
 
-        DyeColor color = getColor();
-        if (color != null) {
-            tag.putString(KEY_COLOR, color.getName());
-        }
+        return tag;
     }
 
     public record SwingFrame(Vec3 velocity, Vec3 spin, UnaryOperator<Vec3> localDirection) {

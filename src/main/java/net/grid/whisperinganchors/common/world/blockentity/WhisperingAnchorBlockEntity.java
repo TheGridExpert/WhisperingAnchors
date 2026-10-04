@@ -27,6 +27,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
     private @Nullable AnchorEntity anchor;
     private @Nullable DyeColor color;
     private @Nullable Component customName;
+    private @Nullable CompoundTag pendingSwing;
 
     public WhisperingAnchorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WHISPERING_ANCHOR.get(), pos, state);
@@ -56,11 +57,12 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
 
         this.anchor = claimExistingAnchor(serverLevel);
         if (this.anchor == null) {
-            this.anchor = AnchorEntity.spawnFor(serverLevel, this.worldPosition);
+            this.anchor = AnchorEntity.spawnFor(serverLevel, this.worldPosition, this.pendingSwing);
             if (this.anchor != null) {
                 transferIdentityTo(this.anchor);
             }
         }
+        this.pendingSwing = null;
     }
 
     @SuppressWarnings("deprecation")
@@ -132,6 +134,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
         super.loadAdditional(tag, registries);
         this.color = tag.contains(AnchorEntity.KEY_COLOR) ? DyeColor.byName(tag.getString(AnchorEntity.KEY_COLOR), null) : null;
         this.customName = tag.contains(AnchorEntity.KEY_CUSTOM_NAME) ? parseCustomNameSafe(tag.getString(AnchorEntity.KEY_CUSTOM_NAME), registries) : null;
+        this.pendingSwing = tag.contains(AnchorEntity.KEY_SWING) ? tag.getCompound(AnchorEntity.KEY_SWING) : null;
     }
 
     @Override
