@@ -94,9 +94,10 @@ public class HeedingCompassItem extends AttunableItem {
 
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
-        if (!this.pendingSearches.containsKey(livingEntity)) return stack;
+        if (level.isClientSide()) return stack;
 
         Optional<AnchorAttunement> result = this.pendingSearches.remove(livingEntity);
+        if (result == null) return stack;
 
         if (result.isEmpty()) {
             if (livingEntity instanceof Player player) {
@@ -111,6 +112,8 @@ public class HeedingCompassItem extends AttunableItem {
 
     @Override
     public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
+        if (entity.level().isClientSide()) return;
+
         this.pendingSearches.remove(entity);
     }
 
