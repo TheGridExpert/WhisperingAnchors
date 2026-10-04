@@ -59,6 +59,6 @@ public class ModAdvancementProvider extends AdvancementProvider {
                 .display(ModItems.HARKENING_BELL.toStack(), Component.translatable("advancement.whispering_anchors.harken_from_alive_dragon.title"), Component.translatable("advancement.whispering_anchors.harken_from_alive_dragon.description"), null, AdvancementType.TASK, true, true, false)
                 .parent(ResourceLocation.withDefaultNamespace("end/root"))
                 .addCriterion("harken", HarkeningTrigger.TriggerInstance.harkenFromAliveDragon())
-                .save(consumer, WhisperingAnchors.modLoc("adventure/harken_from_alive_dragon"), existingFileHelper);
+                .save(consumer, WhisperingAnchors.modLoc("end/harken_from_alive_dragon"), existingFileHelper);
     }
 }

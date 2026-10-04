@@ -22,7 +22,7 @@
   },
   "display": {
     "description": {
-      "translate": "advancement.whispering_anchors.harken_from_all_dimentions.description"
+      "translate": "advancement.whispering_anchors.harken_from_all_dimensions.description"
     },
     "frame": "challenge",
     "icon": {
@@ -30,7 +30,7 @@
       "id": "whispering_anchors:harkening_bell"
     },
     "title": {
-      "translate": "advancement.whispering_anchors.harken_from_all_dimentions.title"
+      "translate": "advancement.whispering_anchors.harken_from_all_dimensions.title"
     }
   },
   "requirements": [
