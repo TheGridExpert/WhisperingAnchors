@@ -23,32 +23,22 @@ public class CompassClearingRecipe extends CustomRecipe {
 
     @Override
     public boolean matches(CraftingInput craftingInput, Level level) {
-        boolean hasCompass = false;
-
-        for (ItemStack stack : craftingInput.items()) {
-            if (stack.is(ModItems.HEEDING_COMPASS)) {
-                if (hasCompass) {
-                    return false;
-                }
-                hasCompass = true;
-            }
-        }
-
-        return hasCompass;
+        return craftingInput.ingredientCount() == 1 && findCompass(craftingInput).has(ModDataComponents.KNOWN_ANCHORS);
     }
 
     @Override
     public ItemStack assemble(CraftingInput craftingInput, HolderLookup.Provider provider) {
-        return craftingInput.items().stream().filter(stack -> stack.is(ModItems.HEEDING_COMPASS)).findFirst().map(stack -> {
-            if (stack.is(ModItems.HEEDING_COMPASS)) {
-                ItemStack result = stack.copy();
-                result.remove(ModDataComponents.KNOWN_ANCHORS);
+        ItemStack compass = findCompass(craftingInput);
+        if (compass.isEmpty()) return ItemStack.EMPTY;
 
-                return result;
-            }
+        ItemStack result = compass.copy();
+        result.remove(ModDataComponents.KNOWN_ANCHORS);
 
-            return stack;
-        }).orElse(ItemStack.EMPTY);
+        return result;
+    }
+
+    private static ItemStack findCompass(CraftingInput craftingInput) {
+        return craftingInput.items().stream().filter(stack -> stack.is(ModItems.HEEDING_COMPASS)).findFirst().orElse(ItemStack.EMPTY);
     }
 
     @Override
