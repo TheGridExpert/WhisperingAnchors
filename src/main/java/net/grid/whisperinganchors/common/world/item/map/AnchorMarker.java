@@ -37,8 +37,7 @@ public record AnchorMarker(BlockPos pos, Optional<DyeColor> color, Optional<Comp
     }
 
     public static boolean isAnchor(BlockGetter level, BlockPos top) {
-        BlockState state = level.getBlockState(top);
-        return state.getBlock() instanceof WhisperingAnchorBlock && state.getValue(WhisperingAnchorBlock.PART) == AnchorPart.TOP;
+        return WhisperingAnchorBlock.isPart(level.getBlockState(top), AnchorPart.TOP);
     }
 
     public Holder<MapDecorationType> getDecoration() {

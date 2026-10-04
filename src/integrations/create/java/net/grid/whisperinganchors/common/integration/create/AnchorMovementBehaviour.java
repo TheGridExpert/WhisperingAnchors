@@ -32,12 +32,8 @@ public class AnchorMovementBehaviour implements MovementBehaviour {
         return direction == Direction.UP || direction == Direction.DOWN && state.getValue(WhisperingAnchorBlock.PART) != AnchorPart.BOTTOM;
     }
 
-    private static boolean isTop(BlockState state) {
-        return state.getBlock() instanceof WhisperingAnchorBlock && state.getValue(WhisperingAnchorBlock.PART) == AnchorPart.TOP;
-    }
-
     private static boolean isSwinging(BlockState state) {
-        return isTop(state) && !ModConfig.areAnchorsStatic();
+        return WhisperingAnchorBlock.isPart(state, AnchorPart.TOP) && !ModConfig.areAnchorsStatic();
     }
 
     @Override
@@ -47,7 +43,7 @@ public class AnchorMovementBehaviour implements MovementBehaviour {
 
     @Override
     public void startMoving(MovementContext context) {
-        if (context.world.isClientSide() || !isTop(context.state)) return;
+        if (context.world.isClientSide() || !WhisperingAnchorBlock.isPart(context.state, AnchorPart.TOP)) return;
 
         BlockPos top = context.contraption.anchor.offset(context.localPos);
         AnchorEntity.findBoundTo(context.world, top).forEach(Entity::discard);

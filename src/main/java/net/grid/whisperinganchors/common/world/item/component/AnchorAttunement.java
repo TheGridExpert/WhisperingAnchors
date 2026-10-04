@@ -41,15 +41,20 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
 
     public static AnchorAttunement of(Level level, BlockPos pos, BlockState state) {
         BlockPos top = WhisperingAnchorBlock.getTopPos(pos, state);
-        AnchorIdentity anchor = AnchorIdentity.find(level, top);
 
-        return new AnchorAttunement(GlobalPos.of(level.dimension(), top), anchor == null ? Optional.empty() : Optional.ofNullable(anchor.getCustomName()), anchor == null ? Optional.empty() : Optional.ofNullable(anchor.getColor()));
+        return of(GlobalPos.of(level.dimension(), top), AnchorIdentity.find(level, top));
+    }
+
+    public static AnchorAttunement of(GlobalPos anchorPos, @Nullable AnchorIdentity anchor) {
+        if (anchor == null) {
+            return new AnchorAttunement(anchorPos, Optional.empty(), Optional.empty());
+        }
+
+        return new AnchorAttunement(anchorPos, Optional.ofNullable(anchor.getCustomName()), Optional.ofNullable(anchor.getColor()));
     }
 
     public Component getDisplayName() {
-        Component name = this.anchorName.orElseGet(() -> AnchorNames.generate(this.anchorPos));
-
-        return this.anchorColor.<Component>map(color -> name.copy().withStyle(style -> style.withColor(color.getTextColor()))).orElse(name);
+        return AnchorIdentity.colorName(this.anchorName.orElseGet(() -> AnchorNames.generate(this.anchorPos)), this.anchorColor.orElse(null));
     }
 
     public @Nullable AnchorAttunement tick(ServerLevel holderLevel) {
@@ -68,9 +73,8 @@ public record AnchorAttunement(GlobalPos anchorPos, Optional<Component> anchorNa
         AnchorIdentity anchor = blockEntity.getIdentity();
         if (anchor == null) return this;
 
-        Optional<Component> name = Optional.ofNullable(anchor.getCustomName());
-        Optional<DyeColor> color = Optional.ofNullable(anchor.getColor());
+        AnchorAttunement current = of(this.anchorPos, anchor);
 
-        return name.equals(this.anchorName) && color.equals(this.anchorColor) ? this : new AnchorAttunement(this.anchorPos, name, color);
+        return current.equals(this) ? this : current;
     }
 }

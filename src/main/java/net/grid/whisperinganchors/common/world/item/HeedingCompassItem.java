@@ -213,7 +213,7 @@ public class HeedingCompassItem extends AttunableItem {
     }
 
     private static AnchorAttunement attunementAt(ServerLevel level, BlockPos anchorPos) {
-        return new AnchorAttunement(GlobalPos.of(level.dimension(), anchorPos), Optional.empty(), Optional.empty());
+        return AnchorAttunement.of(GlobalPos.of(level.dimension(), anchorPos), null);
     }
 
     private static double horizontalDistSqr(BlockPos a, BlockPos b) {

@@ -77,7 +77,7 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
         builder.add(PART, FACING);
     }
 
-    private static boolean isPart(BlockState state, AnchorPart part) {
+    public static boolean isPart(BlockState state, AnchorPart part) {
         return state.getBlock() instanceof WhisperingAnchorBlock && state.getValue(PART) == part;
     }
 

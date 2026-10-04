@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.grid.whisperinganchors.client.renderer.AnchorModelRenderer;
 import net.grid.whisperinganchors.common.config.ModConfig;
 import net.grid.whisperinganchors.common.integration.SubLevelHandler;
+import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
@@ -16,13 +17,10 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-
-import javax.annotation.Nullable;
 
 public class WhisperingAnchorRenderer implements BlockEntityRenderer<WhisperingAnchorBlockEntity> {
 
@@ -64,12 +62,8 @@ public class WhisperingAnchorRenderer implements BlockEntityRenderer<WhisperingA
 
         Component name = blockEntity.getCustomName();
         if (name != null) {
-            renderNameTag(level, colorDisplayName(name, blockEntity.getColor()), centreOfMass, top, partialTick, poseStack, bufferSource, light);
+            renderNameTag(level, AnchorIdentity.colorName(name, blockEntity.getColor()), centreOfMass, top, partialTick, poseStack, bufferSource, light);
         }
-    }
-
-    private static Component colorDisplayName(Component name, @Nullable DyeColor color) {
-        return color == null ? name : name.copy().withStyle(style -> style.withColor(color.getTextColor()));
     }
 
     private void renderNameTag(Level level, Component name, Vec3 centreOfMass, BlockPos top, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int light) {

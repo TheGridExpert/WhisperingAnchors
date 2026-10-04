@@ -49,15 +49,11 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     public static final String KEY_BOUND_POS = "BoundPos";
     public static final String KEY_COLOR = "Color";
     public static final String KEY_CUSTOM_NAME = "CustomName";
-    public static final String KEY_CHAIN_X = "ChainX";
-    public static final String KEY_CHAIN_Z = "ChainZ";
-    public static final String KEY_TILT_X = "TiltX";
-    public static final String KEY_TILT_Z = "TiltZ";
-    public static final String KEY_CHAIN_VELOCITY_X = "ChainVelocityX";
-    public static final String KEY_CHAIN_VELOCITY_Z = "ChainVelocityZ";
-    public static final String KEY_TILT_VELOCITY_X = "TiltVelocityX";
-    public static final String KEY_TILT_VELOCITY_Z = "TiltVelocityZ";
     public static final String KEY_SWING = "Swing";
+    private static final String KEY_ANGLE_X = "AngleX";
+    private static final String KEY_ANGLE_Z = "AngleZ";
+    private static final String KEY_VELOCITY_X = "VelocityX";
+    private static final String KEY_VELOCITY_Z = "VelocityZ";
 
     public static final int UNDYED = -1;
 
@@ -81,8 +77,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final double MAX_SWING_RATE = 0.5;
 
     private static final double CHAIN_RESTORING = GRAVITY / CHAIN_LENGTH;
-    private static final double TILT_RESTORING = GRAVITY * SHACKLE_TO_CENTRE / GYRATION_RADIUS_SQ;
-    private static final double TILT_TO_CHAIN = SHACKLE_TO_CENTRE / CHAIN_LENGTH;
+    private static final double BODY_RESTORING = GRAVITY * SHACKLE_TO_CENTRE / GYRATION_RADIUS_SQ;
+    private static final double BODY_TO_CHAIN = SHACKLE_TO_CENTRE / CHAIN_LENGTH;
 
     private static final double SWING_DRAG = 0.997;
     private static final double SHACKLE_FRICTION = 0.40;
@@ -133,19 +129,17 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final EntityDataAccessor<BlockPos> DATA_BOUND_POS = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<Float> DATA_CHAIN_X = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_CHAIN_Z = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Float> DATA_TILT_X = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Float> DATA_TILT_Z = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_BODY_X = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_BODY_Z = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_CHAIN_VELOCITY_X = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_CHAIN_VELOCITY_Z = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Float> DATA_TILT_VELOCITY_X = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Float> DATA_TILT_VELOCITY_Z = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_BODY_VELOCITY_X = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_BODY_VELOCITY_Z = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_COLOR = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Byte> DATA_ORBIT_DIRECTION = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.BYTE);
 
-    private float chainX;
-    private float chainZ;
-    private float tiltX;
-    private float tiltZ;
+    private final Joint chain = new Joint("Chain", DATA_CHAIN_X, DATA_CHAIN_Z, DATA_CHAIN_VELOCITY_X, DATA_CHAIN_VELOCITY_Z);
+    private final Joint body = new Joint("Body", DATA_BODY_X, DATA_BODY_Z, DATA_BODY_VELOCITY_X, DATA_BODY_VELOCITY_Z);
     private float restX;
     private float restZ;
     private double gravityScale = 1.0;
@@ -153,18 +147,6 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private @Nullable Vec3 lastFrameVelocity;
     private @Nullable Vec3 lastFrameSpin;
     private Vec3 steadyFrameAcceleration = Vec3.ZERO;
-    private float chainXO;
-    private float chainZO;
-    private float tiltXO;
-    private float tiltZO;
-    private double chainVelX;
-    private double chainVelZ;
-    private double tiltVelX;
-    private double tiltVelZ;
-    private float sentChainX;
-    private float sentChainZ;
-    private float sentTiltX;
-    private float sentTiltZ;
     private int impactSoundCooldown;
     private int orbitTicks;
     private int orbitDirection;
@@ -183,7 +165,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         if (swing != null) {
             anchor.readSwing(swing);
         }
-        anchor.setPos(anchor.getCentreOfMass(anchor.chainX, anchor.chainZ, anchor.tiltX, anchor.tiltZ));
+        anchor.setPos(anchor.getCurrentCentreOfMass());
         level.addFreshEntity(anchor);
 
         return anchor;
@@ -211,8 +193,16 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         return getSuspensionPoint().add(calculatePendulumOffset(CHAIN_LENGTH, chainX, chainZ));
     }
 
-    public Vec3 getCentreOfMass(float chainX, float chainZ, float tiltX, float tiltZ) {
-        return getShacklePos(chainX, chainZ).add(calculatePendulumOffset(SHACKLE_TO_CENTRE, tiltX, tiltZ));
+    public Vec3 getCentreOfMass(float chainX, float chainZ, float bodyX, float bodyZ) {
+        return getShacklePos(chainX, chainZ).add(calculatePendulumOffset(SHACKLE_TO_CENTRE, bodyX, bodyZ));
+    }
+
+    private Vec3 getCurrentShacklePos() {
+        return getShacklePos(this.chain.x, this.chain.z);
+    }
+
+    private Vec3 getCurrentCentreOfMass() {
+        return getCentreOfMass(this.chain.x, this.chain.z, this.body.x, this.body.z);
     }
 
     public static Vec3 getRestingCentreOfMass(BlockPos top) {
@@ -245,19 +235,13 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
 
         super.tick();
 
-        this.chainXO = this.chainX;
-        this.chainZO = this.chainZ;
-        this.tiltXO = this.tiltX;
-        this.tiltZO = this.tiltZ;
+        rememberPreviousSwing();
 
         if (level().isClientSide()) {
             if (justSpawned) {
                 adoptSyncedState();
 
-                this.chainXO = this.chainX;
-                this.chainZO = this.chainZ;
-                this.tiltXO = this.tiltX;
-                this.tiltZO = this.tiltZ;
+                rememberPreviousSwing();
             } else {
                 tickPendulum(captureFrame());
                 correctTowardsSynced();
@@ -293,12 +277,11 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             syncState();
         }
 
-        setPos(getCentreOfMass(this.chainX, this.chainZ, this.tiltX, this.tiltZ));
+        setPos(getCurrentCentreOfMass());
     }
 
     private boolean isStillAnchored() {
-        BlockState state = level().getBlockState(getBoundPos());
-        return state.getBlock() instanceof WhisperingAnchorBlock && state.getValue(WhisperingAnchorBlock.PART) == AnchorPart.TOP;
+        return WhisperingAnchorBlock.isPart(level().getBlockState(getBoundPos()), AnchorPart.TOP);
     }
 
     public static void spawnCrumbleParticles(ServerLevel level, AABB body) {
@@ -335,19 +318,19 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     private double getTipX() {
-        return CHAIN_LENGTH * Math.sin(this.chainX - this.restX) + TIP_BELOW_SHACKLE * Math.sin(this.tiltX - this.restX);
+        return CHAIN_LENGTH * Math.sin(this.chain.x - this.restX) + TIP_BELOW_SHACKLE * Math.sin(this.body.x - this.restX);
     }
 
     private double getTipZ() {
-        return CHAIN_LENGTH * Math.sin(this.chainZ - this.restZ) + TIP_BELOW_SHACKLE * Math.sin(this.tiltZ - this.restZ);
+        return CHAIN_LENGTH * Math.sin(this.chain.z - this.restZ) + TIP_BELOW_SHACKLE * Math.sin(this.body.z - this.restZ);
     }
 
     private double getTipVelX() {
-        return CHAIN_LENGTH * this.chainVelX + TIP_BELOW_SHACKLE * this.tiltVelX;
+        return CHAIN_LENGTH * this.chain.velX + TIP_BELOW_SHACKLE * this.body.velX;
     }
 
     private double getTipVelZ() {
-        return CHAIN_LENGTH * this.chainVelZ + TIP_BELOW_SHACKLE * this.tiltVelZ;
+        return CHAIN_LENGTH * this.chain.velZ + TIP_BELOW_SHACKLE * this.body.velZ;
     }
 
     private void applyOrbitDrive() {
@@ -396,10 +379,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         double swingX = scale * (outX * radialPull + aroundX * orbitPush);
         double swingZ = scale * (outZ * radialPull + aroundZ * orbitPush);
 
-        this.chainVelX += swingX;
-        this.chainVelZ += swingZ;
-        this.tiltVelX += swingX;
-        this.tiltVelZ += swingZ;
+        this.chain.addVelocity(swingX, swingZ);
+        this.body.addVelocity(swingX, swingZ);
     }
 
     private static float toAngleX(Vec3 direction, float previous) {
@@ -418,12 +399,13 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     public void tickSwing(SwingFrame frame) {
-        this.chainXO = this.chainX;
-        this.chainZO = this.chainZ;
-        this.tiltXO = this.tiltX;
-        this.tiltZO = this.tiltZ;
-
+        rememberPreviousSwing();
         tickPendulum(frame);
+    }
+
+    private void rememberPreviousSwing() {
+        this.chain.rememberPrevious();
+        this.body.rememberPrevious();
     }
 
     private SwingFrame captureFrame() {
@@ -447,7 +429,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         Vec3 spinUp = this.lastFrameSpin == null ? Vec3.ZERO : spin.subtract(this.lastFrameSpin);
         this.lastFrameSpin = spin;
 
-        Vec3 offset = getCentreOfMass(this.chainX, this.chainZ, this.tiltX, this.tiltZ).subtract(suspension);
+        Vec3 offset = getCurrentCentreOfMass().subtract(suspension);
         Vec3 kick = frame.localDirection().apply(calculateFrameAcceleration(frame.velocity())).add(spinUp.cross(offset));
         this.steadyFrameAcceleration = this.steadyFrameAcceleration.add(kick.subtract(this.steadyFrameAcceleration).scale(1.0 / FRAME_SMOOTHING_TICKS));
         Vec3 jolt = kick.subtract(this.steadyFrameAcceleration);
@@ -481,45 +463,23 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     public void addSwingVelocity(Vec3 velocity) {
-        swingRigidly(velocity, getCentreOfMass(this.chainX, this.chainZ, this.tiltX, this.tiltZ).subtract(getSuspensionPoint()).length());
+        swingRigidly(velocity, getCurrentCentreOfMass().subtract(getSuspensionPoint()).length());
     }
 
     public void transformSwing(UnaryOperator<Vec3> rotation) {
-        double[] chain = transformSwingPart(rotation, this.chainX, this.chainZ, this.chainVelX, this.chainVelZ);
-        double[] tilt = transformSwingPart(rotation, this.tiltX, this.tiltZ, this.tiltVelX, this.tiltVelZ);
-
-        this.chainXO = this.chainX = (float) chain[0];
-        this.chainZO = this.chainZ = (float) chain[1];
-        this.chainVelX = chain[2];
-        this.chainVelZ = chain[3];
-        this.tiltXO = this.tiltX = (float) tilt[0];
-        this.tiltZO = this.tiltZ = (float) tilt[1];
-        this.tiltVelX = tilt[2];
-        this.tiltVelZ = tilt[3];
-    }
-
-    private static double[] transformSwingPart(UnaryOperator<Vec3> rotation, float angleX, float angleZ, double velX, double velZ) {
-        Vec3 direction = rotation.apply(calculatePendulumOffset(1.0, angleX, angleZ));
-        Vec3 motion = rotation.apply(getSwingAlongX(angleX, angleZ).scale(velX).add(getSwingAlongZ(angleX, angleZ).scale(velZ)));
-
-        float newX = toAngleX(direction, angleX);
-        float newZ = toAngleZ(direction);
-        double cosZ = Math.max(Math.cos(newZ), 1.0E-3);
-
-        return new double[] { newX, newZ, motion.dot(getSwingAlongX(newX, newZ)) / (cosZ * cosZ), motion.dot(getSwingAlongZ(newX, newZ)) };
+        this.chain.transform(rotation);
+        this.body.transform(rotation);
     }
 
     private void swingRigidly(Vec3 velocityChange, double reach) {
         if (reach < 1.0E-4 || velocityChange.lengthSqr() < 1.0E-12) return;
 
-        double cosZ = Math.cos(this.tiltZ);
-        double deltaX = velocityChange.dot(getSwingAlongX(this.tiltX, this.tiltZ)) / (reach * cosZ * cosZ);
-        double deltaZ = velocityChange.dot(getSwingAlongZ(this.tiltX, this.tiltZ)) / reach;
+        double cosZ = Math.cos(this.body.z);
+        double deltaX = velocityChange.dot(getSwingAlongX(this.body.x, this.body.z)) / (reach * cosZ * cosZ);
+        double deltaZ = velocityChange.dot(getSwingAlongZ(this.body.x, this.body.z)) / reach;
 
-        this.chainVelX += deltaX;
-        this.chainVelZ += deltaZ;
-        this.tiltVelX += deltaX;
-        this.tiltVelZ += deltaZ;
+        this.chain.addVelocity(deltaX, deltaZ);
+        this.body.addVelocity(deltaX, deltaZ);
     }
 
     private double calculatePullAlongX(float angleX, float angleZ) {
@@ -531,154 +491,65 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         return (this.localDown.y * Math.cos(angleX) - this.localDown.x * Math.sin(angleX)) * Math.sin(angleZ) + this.localDown.z * Math.cos(angleZ);
     }
 
-    private void applySphericalMotion() {
-        double chainVelX = this.chainVelX;
-        this.chainVelX += 2.0 * Math.tan(this.chainZ) * chainVelX * this.chainVelZ;
-        this.chainVelZ -= Math.sin(this.chainZ) * Math.cos(this.chainZ) * chainVelX * chainVelX;
-
-        double tiltVelX = this.tiltVelX;
-        this.tiltVelX += 2.0 * Math.tan(this.tiltZ) * tiltVelX * this.tiltVelZ;
-        this.tiltVelZ -= Math.sin(this.tiltZ) * Math.cos(this.tiltZ) * tiltVelX * tiltVelX;
-    }
-
     private void tickPendulum(SwingFrame frame) {
         applyFrameMotion(frame);
         applyOrbitDrive();
 
-        double couplingX = this.gravityScale * TILT_RESTORING * Math.sin(this.chainX - this.tiltX);
-        double couplingZ = this.gravityScale * TILT_RESTORING * Math.sin(this.chainZ - this.tiltZ);
+        double couplingX = this.gravityScale * BODY_RESTORING * Math.sin(this.chain.x - this.body.x);
+        double couplingZ = this.gravityScale * BODY_RESTORING * Math.sin(this.chain.z - this.body.z);
 
-        this.tiltVelX += couplingX;
-        this.tiltVelZ += couplingZ;
-        this.chainVelX += this.gravityScale * CHAIN_RESTORING * calculatePullAlongX(this.chainX, this.chainZ) - TILT_TO_CHAIN * couplingX;
-        this.chainVelZ += this.gravityScale * CHAIN_RESTORING * calculatePullAlongZ(this.chainX, this.chainZ) - TILT_TO_CHAIN * couplingZ;
+        this.body.addVelocity(couplingX, couplingZ);
+        this.chain.addVelocity(this.gravityScale * CHAIN_RESTORING * calculatePullAlongX(this.chain.x, this.chain.z) - BODY_TO_CHAIN * couplingX, this.gravityScale * CHAIN_RESTORING * calculatePullAlongZ(this.chain.x, this.chain.z) - BODY_TO_CHAIN * couplingZ);
 
-        applySphericalMotion();
+        this.chain.applySphericalMotion();
+        this.body.applySphericalMotion();
 
-        this.chainVelX *= SWING_DRAG;
-        this.chainVelZ *= SWING_DRAG;
-        this.tiltVelX *= SWING_DRAG;
-        this.tiltVelZ *= SWING_DRAG;
+        this.chain.dampVelocity(SWING_DRAG);
+        this.body.dampVelocity(SWING_DRAG);
 
-        double slipX = (this.tiltVelX - this.chainVelX) * SHACKLE_FRICTION / (1.0 + TILT_TO_CHAIN);
-        double slipZ = (this.tiltVelZ - this.chainVelZ) * SHACKLE_FRICTION / (1.0 + TILT_TO_CHAIN);
-        this.tiltVelX -= slipX;
-        this.tiltVelZ -= slipZ;
-        this.chainVelX += TILT_TO_CHAIN * slipX;
-        this.chainVelZ += TILT_TO_CHAIN * slipZ;
+        double slipX = (this.body.velX - this.chain.velX) * SHACKLE_FRICTION / (1.0 + BODY_TO_CHAIN);
+        double slipZ = (this.body.velZ - this.chain.velZ) * SHACKLE_FRICTION / (1.0 + BODY_TO_CHAIN);
+        this.body.addVelocity(-slipX, -slipZ);
+        this.chain.addVelocity(BODY_TO_CHAIN * slipX, BODY_TO_CHAIN * slipZ);
 
-        this.chainVelX = Mth.clamp(this.chainVelX, -MAX_SWING_RATE, MAX_SWING_RATE);
-        this.chainVelZ = Mth.clamp(this.chainVelZ, -MAX_SWING_RATE, MAX_SWING_RATE);
-        this.tiltVelX = Mth.clamp(this.tiltVelX, -MAX_SWING_RATE, MAX_SWING_RATE);
-        this.tiltVelZ = Mth.clamp(this.tiltVelZ, -MAX_SWING_RATE, MAX_SWING_RATE);
+        this.chain.clampVelocity(MAX_SWING_RATE);
+        this.body.clampVelocity(MAX_SWING_RATE);
 
-        this.chainX += (float) this.chainVelX;
-        this.chainZ += (float) this.chainVelZ;
-        this.tiltX += (float) this.tiltVelX;
-        this.tiltZ += (float) this.tiltVelZ;
+        this.chain.move();
+        this.body.move();
 
-        limitChainSwing();
-        limitTiltSwing();
+        this.chain.limitSwing();
+        this.body.limitSwing();
 
-        if (!isSwingFinite()) {
-            this.chainX = this.tiltX = this.restX;
-            this.chainZ = this.tiltZ = this.restZ;
-            this.chainVelX = this.chainVelZ = this.tiltVelX = this.tiltVelZ = 0.0;
-        }
-
-        if (this.orbitStrength <= 0.0F && isAtRest()) {
-            this.chainX = this.tiltX = this.restX;
-            this.chainZ = this.tiltZ = this.restZ;
-            this.chainVelX = this.chainVelZ = this.tiltVelX = this.tiltVelZ = 0.0;
-        }
-    }
-
-    private boolean isSwingFinite() {
-        return Float.isFinite(this.chainX) && Float.isFinite(this.chainZ) && Float.isFinite(this.tiltX) && Float.isFinite(this.tiltZ)
-                && Double.isFinite(this.chainVelX) && Double.isFinite(this.chainVelZ) && Double.isFinite(this.tiltVelX) && Double.isFinite(this.tiltVelZ);
-    }
-
-    private void limitChainSwing() {
-        double reach = Math.hypot(this.chainX, this.chainZ);
-        if (reach <= MAX_ANGLE) return;
-
-        double outX = this.chainX / reach;
-        double outZ = this.chainZ / reach;
-        this.chainX = (float) (outX * MAX_ANGLE);
-        this.chainZ = (float) (outZ * MAX_ANGLE);
-
-        double outward = this.chainVelX * outX + this.chainVelZ * outZ;
-        if (outward > 0.0) {
-            double alongX = this.chainVelX - outward * outX;
-            double alongZ = this.chainVelZ - outward * outZ;
-            this.chainVelX = alongX * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outX;
-            this.chainVelZ = alongZ * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outZ;
-        }
-    }
-
-    private void limitTiltSwing() {
-        double reach = Math.hypot(this.tiltX, this.tiltZ);
-        if (reach <= MAX_ANGLE) return;
-
-        double outX = this.tiltX / reach;
-        double outZ = this.tiltZ / reach;
-        this.tiltX = (float) (outX * MAX_ANGLE);
-        this.tiltZ = (float) (outZ * MAX_ANGLE);
-
-        double outward = this.tiltVelX * outX + this.tiltVelZ * outZ;
-        if (outward > 0.0) {
-            double alongX = this.tiltVelX - outward * outX;
-            double alongZ = this.tiltVelZ - outward * outZ;
-            this.tiltVelX = alongX * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outX;
-            this.tiltVelZ = alongZ * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outZ;
+        if (!this.chain.isFinite() || !this.body.isFinite() || this.orbitStrength <= 0.0F && isAtRest()) {
+            this.chain.settle(this.restX, this.restZ);
+            this.body.settle(this.restX, this.restZ);
         }
     }
 
     private boolean isAtRest() {
-        return Math.abs(this.chainX - this.restX) < REST_ANGLE_EPSILON && Math.abs(this.chainZ - this.restZ) < REST_ANGLE_EPSILON
-                && Math.abs(this.tiltX - this.restX) < REST_ANGLE_EPSILON && Math.abs(this.tiltZ - this.restZ) < REST_ANGLE_EPSILON
-                && Math.abs(this.chainVelX) < REST_VELOCITY_EPSILON && Math.abs(this.chainVelZ) < REST_VELOCITY_EPSILON
-                && Math.abs(this.tiltVelX) < REST_VELOCITY_EPSILON && Math.abs(this.tiltVelZ) < REST_VELOCITY_EPSILON;
+        return this.chain.isAtRest(this.restX, this.restZ) && this.body.isAtRest(this.restX, this.restZ);
     }
 
     private void syncState() {
-        if (Math.abs(this.chainX - this.sentChainX) < SYNC_EPSILON
-                && Math.abs(this.chainZ - this.sentChainZ) < SYNC_EPSILON
-                && Math.abs(this.tiltX - this.sentTiltX) < SYNC_EPSILON
-                && Math.abs(this.tiltZ - this.sentTiltZ) < SYNC_EPSILON) {
-            return;
-        }
+        if (!this.chain.hasDriftedFromSent() && !this.body.hasDriftedFromSent()) return;
 
-        this.entityData.set(DATA_CHAIN_X, this.sentChainX = this.chainX);
-        this.entityData.set(DATA_CHAIN_Z, this.sentChainZ = this.chainZ);
-        this.entityData.set(DATA_TILT_X, this.sentTiltX = this.tiltX);
-        this.entityData.set(DATA_TILT_Z, this.sentTiltZ = this.tiltZ);
-        this.entityData.set(DATA_CHAIN_VELOCITY_X, (float) this.chainVelX);
-        this.entityData.set(DATA_CHAIN_VELOCITY_Z, (float) this.chainVelZ);
-        this.entityData.set(DATA_TILT_VELOCITY_X, (float) this.tiltVelX);
-        this.entityData.set(DATA_TILT_VELOCITY_Z, (float) this.tiltVelZ);
+        sendState();
+    }
+
+    private void sendState() {
+        this.chain.send();
+        this.body.send();
     }
 
     private void adoptSyncedState() {
-        this.chainX = this.entityData.get(DATA_CHAIN_X);
-        this.chainZ = this.entityData.get(DATA_CHAIN_Z);
-        this.tiltX = this.entityData.get(DATA_TILT_X);
-        this.tiltZ = this.entityData.get(DATA_TILT_Z);
-        this.chainVelX = this.entityData.get(DATA_CHAIN_VELOCITY_X);
-        this.chainVelZ = this.entityData.get(DATA_CHAIN_VELOCITY_Z);
-        this.tiltVelX = this.entityData.get(DATA_TILT_VELOCITY_X);
-        this.tiltVelZ = this.entityData.get(DATA_TILT_VELOCITY_Z);
+        this.chain.adoptSynced();
+        this.body.adoptSynced();
     }
 
     private void correctTowardsSynced() {
-        this.chainX = Mth.lerp(CLIENT_CORRECTION, this.chainX, this.entityData.get(DATA_CHAIN_X));
-        this.chainZ = Mth.lerp(CLIENT_CORRECTION, this.chainZ, this.entityData.get(DATA_CHAIN_Z));
-        this.tiltX = Mth.lerp(CLIENT_CORRECTION, this.tiltX, this.entityData.get(DATA_TILT_X));
-        this.tiltZ = Mth.lerp(CLIENT_CORRECTION, this.tiltZ, this.entityData.get(DATA_TILT_Z));
-        this.chainVelX = Mth.lerp(CLIENT_CORRECTION, this.chainVelX, (double) this.entityData.get(DATA_CHAIN_VELOCITY_X));
-        this.chainVelZ = Mth.lerp(CLIENT_CORRECTION, this.chainVelZ, (double) this.entityData.get(DATA_CHAIN_VELOCITY_Z));
-        this.tiltVelX = Mth.lerp(CLIENT_CORRECTION, this.tiltVelX, (double) this.entityData.get(DATA_TILT_VELOCITY_X));
-        this.tiltVelZ = Mth.lerp(CLIENT_CORRECTION, this.tiltVelZ, (double) this.entityData.get(DATA_TILT_VELOCITY_Z));
+        this.chain.correctTowardsSynced();
+        this.body.correctTowardsSynced();
     }
 
     private void collideWithNearbyAnchors() {
@@ -704,8 +575,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         AABB self = getBoundingBox();
         AABB theirs = other.getBoundingBox();
         double contactY = (Math.min(self.maxY, theirs.maxY) + Math.max(self.minY, theirs.minY)) * 0.5;
-        double thisContact = getShacklePos(this.chainX, this.chainZ).y - contactY;
-        double otherContact = other.getShacklePos(other.chainX, other.chainZ).y - contactY;
+        double thisContact = getCurrentShacklePos().y - contactY;
+        double otherContact = other.getCurrentShacklePos().y - contactY;
 
         double closingSpeed = other.getContactSpeedAlong(normalX, normalZ, otherContact) - getContactSpeedAlong(normalX, normalZ, thisContact);
         if (closingSpeed <= 0.0) return;
@@ -721,7 +592,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     private Vec3 getContactVelocity(double belowShackle) {
-        return new Vec3(CHAIN_LENGTH * this.chainVelX + belowShackle * this.tiltVelX, 0.0, CHAIN_LENGTH * this.chainVelZ + belowShackle * this.tiltVelZ);
+        return new Vec3(CHAIN_LENGTH * this.chain.velX + belowShackle * this.body.velX, 0.0, CHAIN_LENGTH * this.chain.velZ + belowShackle * this.body.velZ);
     }
 
     private double getContactSpeedAlong(double normalX, double normalZ, double belowShackle) {
@@ -831,7 +702,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private void applyContactHit(Entity target, double normalX, double normalZ, double contactY) {
         if (!(target instanceof LivingEntity victim)) return;
 
-        double belowShackle = getShacklePos(this.chainX, this.chainZ).y - contactY;
+        double belowShackle = getCurrentShacklePos().y - contactY;
         double anchorSpeedTowards = getContactSpeedAlong(normalX, normalZ, belowShackle);
         if (anchorSpeedTowards <= HARMLESS_IMPACT_SPEED) return;
 
@@ -906,14 +777,12 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
 
     private void applyImpulse(double dirX, double dirZ, double contactY, double specificImpulse) {
         specificImpulse *= 1.0 - ORBIT_RESPONSE_LOSS * this.orbitStrength;
-        double armFromCentre = getShacklePos(this.chainX, this.chainZ).y - contactY - SHACKLE_TO_CENTRE;
-        double tiltImpulse = specificImpulse * armFromCentre / GYRATION_RADIUS_SQ;
-        double chainImpulse = (specificImpulse - SHACKLE_TO_CENTRE * tiltImpulse) / CHAIN_LENGTH;
+        double armFromCentre = getCurrentShacklePos().y - contactY - SHACKLE_TO_CENTRE;
+        double bodyImpulse = specificImpulse * armFromCentre / GYRATION_RADIUS_SQ;
+        double chainImpulse = (specificImpulse - SHACKLE_TO_CENTRE * bodyImpulse) / CHAIN_LENGTH;
 
-        this.tiltVelX += dirX * tiltImpulse;
-        this.tiltVelZ += dirZ * tiltImpulse;
-        this.chainVelX += dirX * chainImpulse;
-        this.chainVelZ += dirZ * chainImpulse;
+        this.body.addVelocity(dirX * bodyImpulse, dirZ * bodyImpulse);
+        this.chain.addVelocity(dirX * chainImpulse, dirZ * chainImpulse);
     }
 
     public BlockPos getBoundPos() {
@@ -947,26 +816,23 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
 
     @Override
     public Component getDisplayName() {
-        DyeColor color = getColor();
-        Component name = super.getDisplayName();
-
-        return color == null ? name : name.copy().withStyle(style -> style.withColor(color.getTextColor()));
+        return AnchorIdentity.colorName(super.getDisplayName(), getColor());
     }
 
     public float getChainX(float partialTick) {
-        return Mth.lerp(partialTick, this.chainXO, this.chainX);
+        return Mth.lerp(partialTick, this.chain.xO, this.chain.x);
     }
 
     public float getChainZ(float partialTick) {
-        return Mth.lerp(partialTick, this.chainZO, this.chainZ);
+        return Mth.lerp(partialTick, this.chain.zO, this.chain.z);
     }
 
-    public float getTiltX(float partialTick) {
-        return Mth.lerp(partialTick, this.tiltXO, this.tiltX);
+    public float getBodyX(float partialTick) {
+        return Mth.lerp(partialTick, this.body.xO, this.body.x);
     }
 
-    public float getTiltZ(float partialTick) {
-        return Mth.lerp(partialTick, this.tiltZO, this.tiltZ);
+    public float getBodyZ(float partialTick) {
+        return Mth.lerp(partialTick, this.body.zO, this.body.z);
     }
 
     @Override
@@ -974,12 +840,12 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         builder.define(DATA_BOUND_POS, BlockPos.ZERO);
         builder.define(DATA_CHAIN_X, 0.0F);
         builder.define(DATA_CHAIN_Z, 0.0F);
-        builder.define(DATA_TILT_X, 0.0F);
-        builder.define(DATA_TILT_Z, 0.0F);
+        builder.define(DATA_BODY_X, 0.0F);
+        builder.define(DATA_BODY_Z, 0.0F);
         builder.define(DATA_CHAIN_VELOCITY_X, 0.0F);
         builder.define(DATA_CHAIN_VELOCITY_Z, 0.0F);
-        builder.define(DATA_TILT_VELOCITY_X, 0.0F);
-        builder.define(DATA_TILT_VELOCITY_Z, 0.0F);
+        builder.define(DATA_BODY_VELOCITY_X, 0.0F);
+        builder.define(DATA_BODY_VELOCITY_Z, 0.0F);
         builder.define(DATA_COLOR, UNDYED);
         builder.define(DATA_ORBIT_DIRECTION, (byte) 0);
     }
@@ -987,33 +853,20 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         setBoundPos(BlockPos.of(tag.getLong(KEY_BOUND_POS)));
-        readSwing(tag);
+        readSwing(tag.getCompound(KEY_SWING));
         setColor(tag.contains(KEY_COLOR) ? DyeColor.byName(tag.getString(KEY_COLOR), null) : null);
     }
 
-    public void readSwing(CompoundTag tag) {
-        this.chainXO = this.chainX = tag.getFloat(KEY_CHAIN_X);
-        this.chainZO = this.chainZ = tag.getFloat(KEY_CHAIN_Z);
-        this.tiltXO = this.tiltX = tag.getFloat(KEY_TILT_X);
-        this.tiltZO = this.tiltZ = tag.getFloat(KEY_TILT_Z);
-        this.chainVelX = tag.getDouble(KEY_CHAIN_VELOCITY_X);
-        this.chainVelZ = tag.getDouble(KEY_CHAIN_VELOCITY_Z);
-        this.tiltVelX = tag.getDouble(KEY_TILT_VELOCITY_X);
-        this.tiltVelZ = tag.getDouble(KEY_TILT_VELOCITY_Z);
-        this.entityData.set(DATA_CHAIN_X, this.sentChainX = this.chainX);
-        this.entityData.set(DATA_CHAIN_Z, this.sentChainZ = this.chainZ);
-        this.entityData.set(DATA_TILT_X, this.sentTiltX = this.tiltX);
-        this.entityData.set(DATA_TILT_Z, this.sentTiltZ = this.tiltZ);
-        this.entityData.set(DATA_CHAIN_VELOCITY_X, (float) this.chainVelX);
-        this.entityData.set(DATA_CHAIN_VELOCITY_Z, (float) this.chainVelZ);
-        this.entityData.set(DATA_TILT_VELOCITY_X, (float) this.tiltVelX);
-        this.entityData.set(DATA_TILT_VELOCITY_Z, (float) this.tiltVelZ);
+    public void readSwing(CompoundTag swing) {
+        this.chain.read(swing);
+        this.body.read(swing);
+        sendState();
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putLong(KEY_BOUND_POS, getBoundPos().asLong());
-        writeSwing(tag);
+        tag.put(KEY_SWING, writeSwing());
 
         DyeColor color = getColor();
         if (color != null) {
@@ -1021,19 +874,161 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         }
     }
 
-    public CompoundTag writeSwing(CompoundTag tag) {
-        tag.putFloat(KEY_CHAIN_X, this.chainX);
-        tag.putFloat(KEY_CHAIN_Z, this.chainZ);
-        tag.putFloat(KEY_TILT_X, this.tiltX);
-        tag.putFloat(KEY_TILT_Z, this.tiltZ);
-        tag.putDouble(KEY_CHAIN_VELOCITY_X, this.chainVelX);
-        tag.putDouble(KEY_CHAIN_VELOCITY_Z, this.chainVelZ);
-        tag.putDouble(KEY_TILT_VELOCITY_X, this.tiltVelX);
-        tag.putDouble(KEY_TILT_VELOCITY_Z, this.tiltVelZ);
+    public CompoundTag writeSwing() {
+        CompoundTag swing = new CompoundTag();
+        this.chain.write(swing);
+        this.body.write(swing);
 
-        return tag;
+        return swing;
     }
 
     public record SwingFrame(Vec3 velocity, Vec3 spin, UnaryOperator<Vec3> localDirection) {
+    }
+
+    private final class Joint {
+
+        private final String key;
+        private final EntityDataAccessor<Float> dataX;
+        private final EntityDataAccessor<Float> dataZ;
+        private final EntityDataAccessor<Float> dataVelocityX;
+        private final EntityDataAccessor<Float> dataVelocityZ;
+
+        private float x;
+        private float z;
+        private float xO;
+        private float zO;
+        private double velX;
+        private double velZ;
+        private float sentX;
+        private float sentZ;
+
+        private Joint(String key, EntityDataAccessor<Float> dataX, EntityDataAccessor<Float> dataZ, EntityDataAccessor<Float> dataVelocityX, EntityDataAccessor<Float> dataVelocityZ) {
+            this.key = key;
+            this.dataX = dataX;
+            this.dataZ = dataZ;
+            this.dataVelocityX = dataVelocityX;
+            this.dataVelocityZ = dataVelocityZ;
+        }
+
+        private void rememberPrevious() {
+            this.xO = this.x;
+            this.zO = this.z;
+        }
+
+        private void addVelocity(double deltaX, double deltaZ) {
+            this.velX += deltaX;
+            this.velZ += deltaZ;
+        }
+
+        private void dampVelocity(double drag) {
+            this.velX *= drag;
+            this.velZ *= drag;
+        }
+
+        private void clampVelocity(double max) {
+            this.velX = Mth.clamp(this.velX, -max, max);
+            this.velZ = Mth.clamp(this.velZ, -max, max);
+        }
+
+        private void applySphericalMotion() {
+            double velX = this.velX;
+            this.velX += 2.0 * Math.tan(this.z) * velX * this.velZ;
+            this.velZ -= Math.sin(this.z) * Math.cos(this.z) * velX * velX;
+        }
+
+        private void move() {
+            this.x += (float) this.velX;
+            this.z += (float) this.velZ;
+        }
+
+        private void limitSwing() {
+            double reach = Math.hypot(this.x, this.z);
+            if (reach <= MAX_ANGLE) return;
+
+            double outX = this.x / reach;
+            double outZ = this.z / reach;
+            this.x = (float) (outX * MAX_ANGLE);
+            this.z = (float) (outZ * MAX_ANGLE);
+
+            double outward = this.velX * outX + this.velZ * outZ;
+            if (outward > 0.0) {
+                double alongX = this.velX - outward * outX;
+                double alongZ = this.velZ - outward * outZ;
+                this.velX = alongX * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outX;
+                this.velZ = alongZ * LIMIT_FRICTION - outward * LIMIT_RESTITUTION * outZ;
+            }
+        }
+
+        private void transform(UnaryOperator<Vec3> rotation) {
+            Vec3 direction = rotation.apply(calculatePendulumOffset(1.0, this.x, this.z));
+            Vec3 motion = rotation.apply(getSwingAlongX(this.x, this.z).scale(this.velX).add(getSwingAlongZ(this.x, this.z).scale(this.velZ)));
+
+            float newX = toAngleX(direction, this.x);
+            float newZ = toAngleZ(direction);
+            double cosZ = Math.max(Math.cos(newZ), 1.0E-3);
+
+            this.xO = this.x = newX;
+            this.zO = this.z = newZ;
+            this.velX = motion.dot(getSwingAlongX(newX, newZ)) / (cosZ * cosZ);
+            this.velZ = motion.dot(getSwingAlongZ(newX, newZ));
+        }
+
+        private boolean isFinite() {
+            return Float.isFinite(this.x) && Float.isFinite(this.z) && Double.isFinite(this.velX) && Double.isFinite(this.velZ);
+        }
+
+        private boolean isAtRest(float restX, float restZ) {
+            return Math.abs(this.x - restX) < REST_ANGLE_EPSILON && Math.abs(this.z - restZ) < REST_ANGLE_EPSILON
+                    && Math.abs(this.velX) < REST_VELOCITY_EPSILON && Math.abs(this.velZ) < REST_VELOCITY_EPSILON;
+        }
+
+        private void settle(float restX, float restZ) {
+            this.x = restX;
+            this.z = restZ;
+            this.velX = 0.0;
+            this.velZ = 0.0;
+        }
+
+        private boolean hasDriftedFromSent() {
+            return Math.abs(this.x - this.sentX) >= SYNC_EPSILON || Math.abs(this.z - this.sentZ) >= SYNC_EPSILON;
+        }
+
+        private void send() {
+            getEntityData().set(this.dataX, this.sentX = this.x);
+            getEntityData().set(this.dataZ, this.sentZ = this.z);
+            getEntityData().set(this.dataVelocityX, (float) this.velX);
+            getEntityData().set(this.dataVelocityZ, (float) this.velZ);
+        }
+
+        private void adoptSynced() {
+            this.x = getEntityData().get(this.dataX);
+            this.z = getEntityData().get(this.dataZ);
+            this.velX = getEntityData().get(this.dataVelocityX);
+            this.velZ = getEntityData().get(this.dataVelocityZ);
+        }
+
+        private void correctTowardsSynced() {
+            this.x = Mth.lerp(CLIENT_CORRECTION, this.x, getEntityData().get(this.dataX));
+            this.z = Mth.lerp(CLIENT_CORRECTION, this.z, getEntityData().get(this.dataZ));
+            this.velX = Mth.lerp(CLIENT_CORRECTION, this.velX, (double) getEntityData().get(this.dataVelocityX));
+            this.velZ = Mth.lerp(CLIENT_CORRECTION, this.velZ, (double) getEntityData().get(this.dataVelocityZ));
+        }
+
+        private void read(CompoundTag swing) {
+            CompoundTag tag = swing.getCompound(this.key);
+            this.xO = this.x = tag.getFloat(KEY_ANGLE_X);
+            this.zO = this.z = tag.getFloat(KEY_ANGLE_Z);
+            this.velX = tag.getDouble(KEY_VELOCITY_X);
+            this.velZ = tag.getDouble(KEY_VELOCITY_Z);
+        }
+
+        private void write(CompoundTag swing) {
+            CompoundTag tag = new CompoundTag();
+            tag.putFloat(KEY_ANGLE_X, this.x);
+            tag.putFloat(KEY_ANGLE_Z, this.z);
+            tag.putDouble(KEY_VELOCITY_X, this.velX);
+            tag.putDouble(KEY_VELOCITY_Z, this.velZ);
+            swing.put(this.key, tag);
+        }
     }
 }

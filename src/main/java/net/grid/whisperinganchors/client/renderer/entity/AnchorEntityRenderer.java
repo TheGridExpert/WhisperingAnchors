@@ -43,8 +43,8 @@ public class AnchorEntityRenderer extends EntityRenderer<AnchorEntity> {
 
         poseStack.pushPose();
         poseStack.translate(shackle.x, shackle.y, shackle.z);
-        poseStack.mulPose(Axis.ZP.rotation(entity.getTiltX(partialTick)));
-        poseStack.mulPose(Axis.XP.rotation(-entity.getTiltZ(partialTick)));
+        poseStack.mulPose(Axis.ZP.rotation(entity.getBodyX(partialTick)));
+        poseStack.mulPose(Axis.XP.rotation(-entity.getBodyZ(partialTick)));
         AnchorModelRenderer.renderBody(poseStack, bufferSource, packedLight, destroyStage, facingYaw);
         poseStack.popPose();
     }

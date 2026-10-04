@@ -3,7 +3,6 @@ package net.grid.whisperinganchors.common.integration.create;
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
@@ -62,13 +61,13 @@ public class ContraptionAnchor {
         if (entity == null || context.blockEntityData == null) return;
 
         UnaryOperator<Vec3> toWorld = direction -> entity.applyRotation(direction, 1.0F);
-        Vec3 centreOfMass = this.swing.getCentreOfMass(this.swing.getChainX(1.0F), this.swing.getChainZ(1.0F), this.swing.getTiltX(1.0F), this.swing.getTiltZ(1.0F));
+        Vec3 centreOfMass = this.swing.getCentreOfMass(this.swing.getChainX(1.0F), this.swing.getChainZ(1.0F), this.swing.getBodyX(1.0F), this.swing.getBodyZ(1.0F));
         Vec3 offset = toWorld.apply(centreOfMass.subtract(this.swing.getSuspensionPoint()));
         Vec3 frameVelocity = this.lastVelocity.add(toWorld.apply(this.lastSpin).cross(offset));
 
         this.swing.transformSwing(toWorld);
         this.swing.addSwingVelocity(frameVelocity);
-        context.blockEntityData.put(AnchorEntity.KEY_SWING, this.swing.writeSwing(new CompoundTag()));
+        context.blockEntityData.put(AnchorEntity.KEY_SWING, this.swing.writeSwing());
     }
 
     private static Vec3 calculateTurn(Vec3[] from, Vec3[] to) {

@@ -21,6 +21,10 @@ public interface AnchorIdentity {
 
     void rename(Component name);
 
+    static Component colorName(Component name, @Nullable DyeColor color) {
+        return color == null ? name : name.copy().withStyle(style -> style.withColor(color.getTextColor()));
+    }
+
     static @Nullable AnchorIdentity find(Level level, BlockPos top) {
         if (ModConfig.areAnchorsStatic()) {
             return level.getBlockEntity(top) instanceof WhisperingAnchorBlockEntity blockEntity ? blockEntity : null;

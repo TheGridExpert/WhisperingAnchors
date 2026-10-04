@@ -15,7 +15,6 @@ import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class CompassClearingRecipeMaker {
 
@@ -25,7 +24,7 @@ public class CompassClearingRecipeMaker {
         List<AnchorAttunement> anchors = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             GlobalPos pos = GlobalPos.of(Level.OVERWORLD, BlockPos.containing(RANDOM.nextInt(-1000, 1000), RANDOM.nextInt(64, 256), RANDOM.nextInt(-1000, 1000)));
-            anchors.add(new AnchorAttunement(pos, Optional.empty(), Optional.empty()));
+            anchors.add(AnchorAttunement.of(pos, null));
         }
 
         ItemStack filledCompass = ModItems.HEEDING_COMPASS.toStack();
