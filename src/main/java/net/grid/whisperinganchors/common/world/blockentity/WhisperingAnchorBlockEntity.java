@@ -38,7 +38,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
     }
 
     public @Nullable AnchorIdentity getIdentity() {
-        return ModConfig.areAnchorsStatic() ? this : this.anchor;
+        return ModConfig.areAnchorsStatic() ? this : getAnchor();
     }
 
     public void clientTick() {
