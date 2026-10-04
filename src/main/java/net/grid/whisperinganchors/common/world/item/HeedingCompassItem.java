@@ -1,5 +1,6 @@
 package net.grid.whisperinganchors.common.world.item;
 
+import net.grid.whisperinganchors.client.event.KnownAnchorsScroll;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModStructures;
@@ -236,23 +237,29 @@ public class HeedingCompassItem extends AttunableItem {
         KnownAnchors knownAnchors = stack.get(ModDataComponents.KNOWN_ANCHORS);
         if (knownAnchors == null || knownAnchors.anchors().isEmpty()) return;
 
-        List<AnchorAttunement> nearest = knownAnchors.anchors().stream()
+        List<AnchorAttunement> sorted = knownAnchors.anchors().stream()
                 .filter(anchor -> anchor.anchorPos().dimension().equals(player.level().dimension()))
                 .sorted(Comparator.comparingDouble(anchor -> getWorldPosition(player.level(), anchor).distanceToSqr(player.position())))
-                .limit(SHOWN_KNOWN_ANCHORS)
                 .toList();
-        if (nearest.isEmpty()) return;
+        if (sorted.isEmpty()) return;
+
+        int offset = KnownAnchorsScroll.getOffset(stack, sorted.size() - SHOWN_KNOWN_ANCHORS);
+        List<AnchorAttunement> nearest = sorted.subList(offset, Math.min(sorted.size(), offset + SHOWN_KNOWN_ANCHORS));
 
         List<Component> lines = new ArrayList<>();
         lines.add(Component.empty());
         lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchors").withStyle(ChatFormatting.GRAY));
+
+        if (offset > 0) {
+            lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.closer_known_anchors", offset).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+        }
 
         for (AnchorAttunement anchor : nearest) {
             double distance = getWorldPosition(player.level(), anchor).distanceTo(player.position());
             lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.known_anchor", anchor.getDisplayName(), formatDistance(distance).withStyle(ChatFormatting.DARK_GRAY)).withStyle(ChatFormatting.GRAY));
         }
 
-        int hidden = knownAnchors.anchors().size() - nearest.size();
+        int hidden = knownAnchors.anchors().size() - offset - nearest.size();
         if (hidden > 0) {
             lines.add(Component.translatable("tooltip.whispering_anchors.heeding_compass.more_known_anchors", hidden).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         }

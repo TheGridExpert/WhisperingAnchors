@@ -49,7 +49,8 @@
   "tooltip.whispering_anchors.heeding_compass.known_anchor": " [%s] %s",
   "tooltip.whispering_anchors.heeding_compass.known_anchor.meters": "%sm",
   "tooltip.whispering_anchors.heeding_compass.known_anchor.kilometers": "%skm",
-  "tooltip.whispering_anchors.heeding_compass.more_known_anchors": " ...and %s more",
+  "tooltip.whispering_anchors.heeding_compass.closer_known_anchors": "  ...%s closer",
+  "tooltip.whispering_anchors.heeding_compass.more_known_anchors": "  ...%s farther",
 
   "subtitles.whispering_anchors.harkening_bell_ringing": "Harkening Bell rings",
   "subtitles.whispering_anchors.whispers": "Whispers",
