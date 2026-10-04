@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 public class HeedingCompassItem extends AttunableItem {
 
     public static final int USE_DURATION = 60;
+    public static final int USE_COOLDOWN = 20;
 
     private static final int SEARCH_RADIUS = 100;
 
@@ -99,6 +100,8 @@ public class HeedingCompassItem extends AttunableItem {
         Optional<AnchorAttunement> result = this.pendingSearches.remove(livingEntity);
         if (result == null) return stack;
 
+        startCooldown(livingEntity);
+
         if (result.isEmpty()) {
             if (livingEntity instanceof Player player) {
                 player.displayClientMessage(Component.translatable("message.whispering_anchors.heeding_compass.cannot_find"), true);
@@ -114,7 +117,15 @@ public class HeedingCompassItem extends AttunableItem {
     public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
         if (entity.level().isClientSide()) return;
 
-        this.pendingSearches.remove(entity);
+        if (this.pendingSearches.remove(entity) != null) {
+            startCooldown(entity);
+        }
+    }
+
+    private void startCooldown(LivingEntity entity) {
+        if (entity instanceof Player player) {
+            player.getCooldowns().addCooldown(this, USE_COOLDOWN);
+        }
     }
 
     @Override
