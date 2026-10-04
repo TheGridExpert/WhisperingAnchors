@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Locale;
 
 @EventBusSubscriber(modid = WhisperingAnchors.MODID, value = Dist.CLIENT)
-public final class KnownAnchorsTooltipHandler {
+public class KnownAnchorsTooltipHandler {
 
     private static final int SHOWN_KNOWN_ANCHORS = 3;
     private static final double SCROLL_SPEED = 2.0;

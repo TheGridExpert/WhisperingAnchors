@@ -7,7 +7,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 @EventBusSubscriber(modid = WhisperingAnchors.MODID)
-public final class CommandEvents {
+public class CommandEvents {
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {

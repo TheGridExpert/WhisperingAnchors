@@ -11,7 +11,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 @EventBusSubscriber(modid = WhisperingAnchors.MODID)
-public final class HarkeningBellEvents {
+public class HarkeningBellEvents {
 
     @SubscribeEvent
     public static void cancelBellUseOnDamage(LivingIncomingDamageEvent event) {

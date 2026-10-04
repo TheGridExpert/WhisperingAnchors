@@ -23,7 +23,7 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
 
-public final class BellOverlay {
+public class BellOverlay {
 
     public static final ModelResourceLocation MODEL = ModelResourceLocation.standalone(WhisperingAnchors.modLoc("item/harkening_bell_overlay"));
 

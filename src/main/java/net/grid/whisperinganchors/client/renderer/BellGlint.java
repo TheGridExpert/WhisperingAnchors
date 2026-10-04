@@ -15,7 +15,7 @@ import net.minecraft.util.FastColor;
 import net.minecraft.world.item.DyeColor;
 import org.joml.Matrix4f;
 
-public final class BellGlint {
+public class BellGlint {
 
     private static final float GLINT_SCALE = 8.0F;
     private static final double GLINT_SCROLL_SPEED = 8.0;

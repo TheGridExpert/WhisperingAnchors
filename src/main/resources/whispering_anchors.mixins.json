@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "MapItemSavedDataMixin",
+    "SimAssemblyContraptionMixin",
     "accessor.BrushableBlockEntityAccessor",
     "accessor.EndDragonFightAccessor",
     "accessor.LivingEntityAccessor",

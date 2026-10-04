@@ -71,6 +71,11 @@ public class SableSubLevelHandler implements SubLevelHandler {
     }
 
     @Override
+    public boolean isInSubLevel(Level level, Vec3 pos) {
+        return SableCompanion.INSTANCE.getContaining(level, pos) != null;
+    }
+
+    @Override
     public boolean isInUnloadedSubLevel(Level level, BlockPos pos) {
         return SableCompanion.INSTANCE.isInPlotGrid(level, pos) && SableCompanion.INSTANCE.getContaining(level, pos) == null;
     }

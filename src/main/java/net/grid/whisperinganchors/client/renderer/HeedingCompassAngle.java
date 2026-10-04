@@ -55,7 +55,7 @@ public class HeedingCompassAngle extends CompassItemPropertyFunction {
         return attunement != null ? attunement.anchorPos() : null;
     }
 
-    private static final class Transition {
+    private static class Transition {
 
         private @Nullable GlobalPos target;
         private float shown;

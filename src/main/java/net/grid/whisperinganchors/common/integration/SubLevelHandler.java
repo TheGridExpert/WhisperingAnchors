@@ -41,6 +41,10 @@ public interface SubLevelHandler {
         return true;
     }
 
+    default boolean isInSubLevel(Level level, Vec3 pos) {
+        return false;
+    }
+
     default boolean isInUnloadedSubLevel(Level level, BlockPos pos) {
         return false;
     }

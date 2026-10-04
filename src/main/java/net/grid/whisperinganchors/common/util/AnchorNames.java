@@ -6,7 +6,7 @@ import net.minecraft.util.RandomSource;
 
 import java.util.List;
 
-public final class AnchorNames {
+public class AnchorNames {
 
     private static final List<String> STEMS = List.of(
             "Ash", "Barrow", "Bleak", "Bone", "Cinder", "Drear", "Dread", "Dusk",

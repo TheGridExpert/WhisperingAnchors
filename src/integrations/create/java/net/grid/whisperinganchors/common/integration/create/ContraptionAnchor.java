@@ -2,8 +2,13 @@ package net.grid.whisperinganchors.common.integration.create;
 
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
+import net.grid.whisperinganchors.api.AnchorFeatures;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 import javax.annotation.Nullable;
 import java.util.function.UnaryOperator;
@@ -25,6 +30,16 @@ public class ContraptionAnchor {
         if (context.data.contains(AnchorEntity.KEY_SWING)) {
             this.swing.readSwing(context.data.getCompound(AnchorEntity.KEY_SWING));
         }
+
+        this.swing.setFrame(new ContraptionFrame(context, Vec3.atLowerCornerOf(context.localPos)));
+        if (!context.world.isClientSide()) {
+            this.swing.setImpulseListener((dirX, dirZ, contactY, specificImpulse) -> {
+                AbstractContraptionEntity entity = context.contraption.entity;
+                if (entity != null) {
+                    PacketDistributor.sendToPlayersTrackingEntity(entity, new ContraptionAnchorImpulsePayload(entity.getId(), context.localPos, dirX, dirZ, contactY, specificImpulse));
+                }
+            });
+        }
     }
 
     public static ContraptionAnchor of(MovementContext context) {
@@ -33,6 +48,16 @@ public class ContraptionAnchor {
         ContraptionAnchor anchor = new ContraptionAnchor(context);
         context.temporaryData = anchor;
         return anchor;
+    }
+
+    public static @Nullable ContraptionAnchor find(AbstractContraptionEntity entity, BlockPos localPos) {
+        for (MutablePair<StructureTemplate.StructureBlockInfo, MovementContext> actor : entity.getContraption().getActors()) {
+            if (actor.left.pos().equals(localPos) && actor.right != null && actor.right.temporaryData instanceof ContraptionAnchor anchor) {
+                return anchor;
+            }
+        }
+
+        return null;
     }
 
     public AnchorEntity getSwing() {
@@ -57,6 +82,10 @@ public class ContraptionAnchor {
         this.lastSpin = spin;
 
         this.swing.tickSwing(new AnchorEntity.SwingFrame(velocity, spin, direction -> entity.reverseRotation(direction, 1.0F)));
+
+        if (!context.world.isClientSide() && AnchorFeatures.doMovingAnchorsHitEntities()) {
+            this.swing.collideWithEntities();
+        }
     }
 
     public void transferSwing(MovementContext context) {
@@ -71,6 +100,50 @@ public class ContraptionAnchor {
         this.swing.transformSwing(toWorld);
         this.swing.addSwingVelocity(frameVelocity);
         context.blockEntityData.put(AnchorEntity.KEY_SWING, this.swing.writeSwing());
+    }
+
+    private class ContraptionFrame implements AnchorEntity.Frame {
+
+        private final MovementContext context;
+        private final Vec3 offset;
+
+        private ContraptionFrame(MovementContext context, Vec3 offset) {
+            this.context = context;
+            this.offset = offset;
+        }
+
+        @Override
+        public Vec3 toLocalPosition(Vec3 worldPosition) {
+            AbstractContraptionEntity entity = this.context.contraption.entity;
+            return entity == null ? worldPosition : entity.toLocalVector(worldPosition, 1.0F).subtract(this.offset);
+        }
+
+        @Override
+        public Vec3 toLocalDirection(Vec3 worldDirection) {
+            AbstractContraptionEntity entity = this.context.contraption.entity;
+            return entity == null ? worldDirection : entity.reverseRotation(worldDirection, 1.0F);
+        }
+
+        @Override
+        public Vec3 toWorldPosition(Vec3 localPosition) {
+            AbstractContraptionEntity entity = this.context.contraption.entity;
+            return entity == null ? localPosition : entity.toGlobalVector(localPosition.add(this.offset), 1.0F);
+        }
+
+        @Override
+        public Vec3 toWorldDirection(Vec3 localDirection) {
+            AbstractContraptionEntity entity = this.context.contraption.entity;
+            return entity == null ? localDirection : entity.applyRotation(localDirection, 1.0F);
+        }
+
+        @Override
+        public Vec3 getVelocity(Vec3 localPosition) {
+            AbstractContraptionEntity entity = this.context.contraption.entity;
+            if (entity == null) return Vec3.ZERO;
+
+            Vec3 arm = localPosition.subtract(ContraptionAnchor.this.swing.getSuspensionPoint());
+            return entity.reverseRotation(ContraptionAnchor.this.lastVelocity, 1.0F).add(ContraptionAnchor.this.lastSpin.cross(arm));
+        }
     }
 
     private static Vec3 calculateTurn(Vec3[] from, Vec3[] to) {

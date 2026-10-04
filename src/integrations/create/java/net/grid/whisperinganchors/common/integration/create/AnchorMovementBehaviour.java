@@ -6,6 +6,7 @@ import com.simibubi.create.api.contraption.BlockMovementChecks.CheckResult;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.contraptions.render.ContraptionMatrices;
 import com.simibubi.create.foundation.virtualWorld.VirtualRenderWorld;
+import net.grid.whisperinganchors.api.AnchorFeatures;
 import net.grid.whisperinganchors.common.config.ModConfig;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.world.block.AnchorPart;
@@ -25,7 +26,7 @@ public class AnchorMovementBehaviour implements MovementBehaviour {
 
     public static void register() {
         MovementBehaviour.REGISTRY.register(ModBlocks.WHISPERING_ANCHOR.get(), new AnchorMovementBehaviour());
-        BlockMovementChecks.registerMovementAllowedCheck((state, level, pos) -> state.getBlock() instanceof WhisperingAnchorBlock ? CheckResult.SUCCESS : CheckResult.PASS);
+        BlockMovementChecks.registerMovementAllowedCheck((state, level, pos) -> state.getBlock() instanceof WhisperingAnchorBlock ? CheckResult.of(AnchorFeatures.areAnchorsStealable()) : CheckResult.PASS);
         BlockMovementChecks.registerAttachedCheck((state, level, pos, direction) -> state.getBlock() instanceof WhisperingAnchorBlock ? CheckResult.of(isAttachedTowards(state, direction)) : CheckResult.PASS);
         BlockMovementChecks.registerBrittleCheck(state -> state.getBlock() instanceof WhisperingAnchorBlock ? CheckResult.SUCCESS : CheckResult.PASS);
     }

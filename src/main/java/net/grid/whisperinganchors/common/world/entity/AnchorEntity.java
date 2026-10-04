@@ -1,5 +1,6 @@
 package net.grid.whisperinganchors.common.world.entity;
 
+import net.grid.whisperinganchors.api.AnchorFeatures;
 import net.grid.whisperinganchors.common.config.ModConfig;
 import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
@@ -27,6 +28,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -96,6 +98,10 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final double MAX_SWING_SPEED = 0.200;
     private static final double DAMAGE_SPEED_FRACTION = 0.75;
     private static final float MAX_IMPACT_DAMAGE = 6.0F;
+    private static final double CARRIED_DAMAGE_PER_SPEED = 5.0;
+    private static final double MAX_CARRIED_DAMAGE_MULTIPLIER = 4.0;
+
+    private static final double SWEEP_MARGIN = 1.0;
 
     private static final double COLLISION_RESTITUTION = 0.25;
 
@@ -152,6 +158,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private int orbitDirection;
     private float orbitStrength;
     private double orbitCatchUp;
+    private Frame frame = new LevelFrame();
+    private @Nullable ImpulseListener impulseListener;
 
     public AnchorEntity(EntityType<? extends AnchorEntity> type, Level level) {
         super(type, level);
@@ -274,6 +282,9 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             convertPushToSwing();
             tickPendulum(captureFrame());
             collideWithNearbyAnchors();
+            if (AnchorFeatures.doMovingAnchorsHitEntities() && SubLevelHandler.INSTANCE.isInSubLevel(level(), position())) {
+                collideWithEntities();
+            }
             syncState();
         }
 
@@ -295,7 +306,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     private void convertPushToSwing() {
-        Vec3 push = SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), getDeltaMovement());
+        Vec3 push = this.frame.toLocalDirection(getDeltaMovement());
         double speed = Math.sqrt(push.x * push.x + push.z * push.z);
         if (speed < 1.0E-4) return;
 
@@ -401,6 +412,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     public void tickSwing(SwingFrame frame) {
         rememberPreviousSwing();
         tickPendulum(frame);
+        setPos(getCurrentCentreOfMass());
     }
 
     private void rememberPreviousSwing() {
@@ -614,7 +626,10 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         if (this.impactSoundCooldown > 0) return;
 
         this.impactSoundCooldown = IMPACT_SOUND_COOLDOWN;
-        playSound(major ? SoundEvents.HEAVY_CORE_BREAK : SoundEvents.HEAVY_CORE_HIT, 2.0F, pitch);
+        if (isSilent()) return;
+
+        Vec3 at = this.frame.toWorldPosition(position());
+        level().playSound(null, at.x, at.y, at.z, major ? SoundEvents.HEAVY_CORE_BREAK : SoundEvents.HEAVY_CORE_HIT, getSoundSource(), 2.0F, pitch);
     }
 
     @Override
@@ -684,7 +699,10 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     public void push(Entity entity) {
         if (level().isClientSide() || entity == this) return;
 
-        Vec3 pusher = SubLevelHandler.INSTANCE.toLocalPosition(level(), position(), entity.position());
+        pushFrom(entity, this.frame.toLocalPosition(entity.position()));
+    }
+
+    private void pushFrom(Entity entity, Vec3 pusher) {
         double dx = getX() - pusher.x;
         double dz = getZ() - pusher.z;
         double length = Math.sqrt(dx * dx + dz * dz);
@@ -703,29 +721,32 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         if (!(target instanceof LivingEntity victim)) return;
 
         double belowShackle = getCurrentShacklePos().y - contactY;
-        double anchorSpeedTowards = getContactSpeedAlong(normalX, normalZ, belowShackle);
+        Vec3 carried = this.frame.getVelocity(new Vec3(getX(), contactY, getZ()));
+        Vec3 swing = getContactVelocity(belowShackle).add(carried.x, 0.0, carried.z);
+        double anchorSpeedTowards = swing.x * normalX + swing.z * normalZ;
         if (anchorSpeedTowards <= HARMLESS_IMPACT_SPEED) return;
 
-        Vec3 swing = getContactVelocity(belowShackle);
         double swingSpeed = swing.length();
         if (swingSpeed < 1.0E-4) return;
 
         double pushX = swing.x / swingSpeed;
         double pushZ = swing.z / swingSpeed;
 
-        double effort = getContactVelocity(SHACKLE_TO_CENTRE).length() / MAX_SWING_SPEED;
-        float damage = (float) Mth.clamp((effort - DAMAGE_SPEED_FRACTION) / (1.0 - DAMAGE_SPEED_FRACTION) * MAX_IMPACT_DAMAGE, 0.0, MAX_IMPACT_DAMAGE);
+        double effort = getContactVelocity(SHACKLE_TO_CENTRE).add(carried.x, 0.0, carried.z).length() / MAX_SWING_SPEED;
+        double carriedTowards = Math.max(0.0, carried.x * normalX + carried.z * normalZ);
+        double multiplier = Math.min(1.0 + carriedTowards * CARRIED_DAMAGE_PER_SPEED, MAX_CARRIED_DAMAGE_MULTIPLIER);
+        float damage = (float) (Mth.clamp((effort - DAMAGE_SPEED_FRACTION) / (1.0 - DAMAGE_SPEED_FRACTION) * MAX_IMPACT_DAMAGE, 0.0, MAX_IMPACT_DAMAGE) * multiplier);
         if (damage > 0.0F) {
             if (!victim.hurt(damageSources().source(ModDamageTypes.ANCHOR_SWING, this), damage)) return;
 
             playImpactSound(1.0F, true);
         }
 
-        Vec3 motion = SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), target.getDeltaMovement());
+        Vec3 motion = this.frame.toLocalDirection(target.getDeltaMovement());
         double approach = Mth.clamp(anchorSpeedTowards - (motion.x * normalX + motion.z * normalZ), 0.0, anchorSpeedTowards);
         double impulse = (1.0 + IMPACT_RESTITUTION) * approach / (calculateInverseEffectiveMass(belowShackle) + 1.0 / VICTIM_MASS_RATIO);
         applyImpulse(-pushX, -pushZ, contactY, impulse);
-        Vec3 knockback = SubLevelHandler.INSTANCE.toWorldDirection(level(), position(), new Vec3(pushX, 0.0, pushZ));
+        Vec3 knockback = this.frame.toWorldDirection(new Vec3(pushX, 0.0, pushZ));
         victim.knockback(impulse / VICTIM_MASS_RATIO, -knockback.x, -knockback.z);
         victim.hurtMarked = true;
     }
@@ -733,7 +754,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     @Override
     public boolean skipAttackInteraction(Entity attacker) {
         if (!level().isClientSide() && !isRemoved() && attacker instanceof LivingEntity living) {
-            onHitByAttacker(living);
+            takeHitFrom(living);
         }
 
         return true;
@@ -744,7 +765,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         if (level().isClientSide() || isRemoved()) return false;
 
         if (source.getDirectEntity() instanceof LivingEntity attacker) {
-            onHitByAttacker(attacker);
+            takeHitFrom(attacker);
         } else if (source.getDirectEntity() instanceof Projectile projectile) {
             onHitByProjectile(projectile);
         }
@@ -753,36 +774,84 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     }
 
     private void onHitByProjectile(Projectile projectile) {
-        Vec3 flight = SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), projectile.getDeltaMovement());
+        Vec3 flight = this.frame.toLocalDirection(projectile.getDeltaMovement());
         double speed = Math.sqrt(flight.x * flight.x + flight.z * flight.z);
         if (speed < 1.0E-4) return;
 
-        double contactY = SubLevelHandler.INSTANCE.toLocalPosition(level(), position(), projectile.position()).y;
+        double contactY = this.frame.toLocalPosition(projectile.position()).y;
         applyImpulse(flight.x / speed, flight.z / speed, contactY, speed * PROJECTILE_MASS_RATIO);
         playImpactSound(1.0F, false);
     }
 
-    private void onHitByAttacker(LivingEntity attacker) {
-        Vec3 look = SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), attacker.getLookAngle());
-        double length = Math.sqrt(look.x * look.x + look.z * look.z);
-        if (length >= 1.0E-4) {
-            Vec3 eye = SubLevelHandler.INSTANCE.toLocalPosition(level(), position(), attacker.getEyePosition());
-            double contactY = getBoundingBox().clip(eye, eye.add(look.scale(6.0))).map(hit -> hit.y).orElse(getY());
-
-            applyImpulse(look.x / length, look.z / length, contactY, HIT_SPECIFIC_IMPULSE);
-        }
-
+    public void takeHitFrom(LivingEntity attacker) {
+        Vec3 eye = this.frame.toLocalPosition(attacker.getEyePosition());
+        Vec3 look = this.frame.toLocalDirection(attacker.getLookAngle());
+        punch(eye, look);
         playImpactSound(1.0F, false);
     }
 
-    private void applyImpulse(double dirX, double dirZ, double contactY, double specificImpulse) {
-        specificImpulse *= 1.0 - ORBIT_RESPONSE_LOSS * this.orbitStrength;
+    public void punch(Vec3 eye, Vec3 look) {
+        double length = Math.sqrt(look.x * look.x + look.z * look.z);
+        if (length < 1.0E-4) return;
+
+        double contactY = getSwingBody().clip(eye, eye.add(look.scale(6.0))).map(hit -> hit.y).orElse(getCurrentCentreOfMass().y);
+        applyImpulse(look.x / length, look.z / length, contactY, HIT_SPECIFIC_IMPULSE);
+    }
+
+    public AABB getSwingBody() {
+        return AABB.ofSize(getCurrentCentreOfMass().add(0.0, MODEL_CENTRE_ABOVE_MASS, 0.0), BODY_WIDTH, BODY_HEIGHT, BODY_WIDTH);
+    }
+
+    public void applyImpulse(double dirX, double dirZ, double contactY, double specificImpulse) {
+        double impulse = specificImpulse * (1.0 - ORBIT_RESPONSE_LOSS * this.orbitStrength);
         double armFromCentre = getCurrentShacklePos().y - contactY - SHACKLE_TO_CENTRE;
-        double bodyImpulse = specificImpulse * armFromCentre / GYRATION_RADIUS_SQ;
-        double chainImpulse = (specificImpulse - SHACKLE_TO_CENTRE * bodyImpulse) / CHAIN_LENGTH;
+        double bodyImpulse = impulse * armFromCentre / GYRATION_RADIUS_SQ;
+        double chainImpulse = (impulse - SHACKLE_TO_CENTRE * bodyImpulse) / CHAIN_LENGTH;
 
         this.body.addVelocity(dirX * bodyImpulse, dirZ * bodyImpulse);
         this.chain.addVelocity(dirX * chainImpulse, dirZ * chainImpulse);
+
+        if (this.impulseListener != null) {
+            this.impulseListener.onImpulse(dirX, dirZ, contactY, specificImpulse);
+        }
+    }
+
+    public void collideWithEntities() {
+        AABB body = getBoundingBox();
+        Vec3 swing = getContactVelocity(SHACKLE_TO_CENTRE);
+        AABB search = toWorldBox(body).inflate(this.frame.getVelocity(position()).length() + swing.length() + SWEEP_MARGIN);
+
+        for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, search, EntitySelector.NO_SPECTATORS)) {
+            double halfWidth = entity.getBbWidth() * 0.5;
+            AABB reach = new AABB(body.minX - halfWidth, body.minY - entity.getBbHeight(), body.minZ - halfWidth, body.maxX + halfWidth, body.maxY, body.maxZ + halfWidth);
+            Vec3 now = this.frame.toLocalPosition(entity.position());
+            if (reach.contains(now)) {
+                pushFrom(entity, now);
+                continue;
+            }
+
+            Vec3 travelled = this.frame.toLocalDirection(entity.getDeltaMovement()).subtract(this.frame.getVelocity(now)).subtract(swing);
+            reach.clip(now.subtract(travelled), now).ifPresent(entry -> pushFrom(entity, entry));
+        }
+    }
+
+    private AABB toWorldBox(AABB local) {
+        Vec3 first = this.frame.toWorldPosition(new Vec3(local.minX, local.minY, local.minZ));
+        AABB box = new AABB(first, first);
+        for (int corner = 1; corner < 8; corner++) {
+            Vec3 point = this.frame.toWorldPosition(new Vec3((corner & 1) == 0 ? local.minX : local.maxX, (corner & 2) == 0 ? local.minY : local.maxY, (corner & 4) == 0 ? local.minZ : local.maxZ));
+            box = box.minmax(new AABB(point, point));
+        }
+
+        return box;
+    }
+
+    public void setFrame(Frame frame) {
+        this.frame = frame;
+    }
+
+    public void setImpulseListener(@Nullable ImpulseListener impulseListener) {
+        this.impulseListener = impulseListener;
     }
 
     public BlockPos getBoundPos() {
@@ -885,7 +954,54 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     public record SwingFrame(Vec3 velocity, Vec3 spin, UnaryOperator<Vec3> localDirection) {
     }
 
-    private final class Joint {
+    public interface Frame {
+
+        Vec3 toLocalPosition(Vec3 worldPosition);
+
+        Vec3 toLocalDirection(Vec3 worldDirection);
+
+        Vec3 toWorldPosition(Vec3 localPosition);
+
+        Vec3 toWorldDirection(Vec3 localDirection);
+
+        Vec3 getVelocity(Vec3 localPosition);
+    }
+
+    @FunctionalInterface
+    public interface ImpulseListener {
+
+        void onImpulse(double dirX, double dirZ, double contactY, double specificImpulse);
+    }
+
+    private class LevelFrame implements Frame {
+
+        @Override
+        public Vec3 toLocalPosition(Vec3 worldPosition) {
+            return SubLevelHandler.INSTANCE.toLocalPosition(level(), position(), worldPosition);
+        }
+
+        @Override
+        public Vec3 toLocalDirection(Vec3 worldDirection) {
+            return SubLevelHandler.INSTANCE.toLocalDirection(level(), position(), worldDirection);
+        }
+
+        @Override
+        public Vec3 toWorldPosition(Vec3 localPosition) {
+            return SubLevelHandler.INSTANCE.toWorldPosition(level(), localPosition);
+        }
+
+        @Override
+        public Vec3 toWorldDirection(Vec3 localDirection) {
+            return SubLevelHandler.INSTANCE.toWorldDirection(level(), position(), localDirection);
+        }
+
+        @Override
+        public Vec3 getVelocity(Vec3 localPosition) {
+            return toLocalDirection(SubLevelHandler.INSTANCE.getVelocity(level(), localPosition));
+        }
+    }
+
+    private class Joint {
 
         private final String key;
         private final EntityDataAccessor<Float> dataX;

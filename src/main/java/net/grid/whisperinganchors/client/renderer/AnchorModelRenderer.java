@@ -26,7 +26,7 @@ import net.neoforged.neoforge.client.model.data.ModelData;
 
 import java.util.SortedSet;
 
-public final class AnchorModelRenderer {
+public class AnchorModelRenderer {
 
     public static final int INTACT = -1;
 

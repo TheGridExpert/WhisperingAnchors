@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class ExtractLootCommand {
+public class ExtractLootCommand {
 
     private static final int MAX_VOLUME = 32768;
     private static final int SINGLE_CHEST_SIZE = 27;

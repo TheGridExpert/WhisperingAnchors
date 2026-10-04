@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
-public final class ContraptionAnchorRenderer {
+public class ContraptionAnchorRenderer {
 
     public static void render(MovementContext context, ContraptionAnchor anchor, ContraptionMatrices matrices, MultiBufferSource buffer) {
         PoseStack poseStack = new PoseStack();

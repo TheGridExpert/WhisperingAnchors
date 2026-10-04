@@ -41,7 +41,7 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 @Mod(value = WhisperingAnchors.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(modid = WhisperingAnchors.MODID, value = Dist.CLIENT)
-public final class WhisperingAnchorsClient {
+public class WhisperingAnchorsClient {
 
     public static final ModelResourceLocation ANCHOR_BODY_MODEL = ModelResourceLocation.standalone(WhisperingAnchors.modLoc("block/anchor_body"));
     public static final ModelResourceLocation ANCHOR_CHAIN_MODEL = ModelResourceLocation.standalone(WhisperingAnchors.modLoc("block/anchor_chain"));

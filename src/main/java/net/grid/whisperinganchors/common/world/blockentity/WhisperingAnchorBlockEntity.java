@@ -49,6 +49,10 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
 
     public void serverTick() {
         if (!(this.level instanceof ServerLevel serverLevel)) return;
+        if (!getBlockState().canSurvive(serverLevel, this.worldPosition)) {
+            serverLevel.destroyBlock(this.worldPosition, true);
+            return;
+        }
         if (ModConfig.areAnchorsStatic()) return;
         if (this.anchor != null && this.anchor.isAlive() && this.anchor.isBoundTo(this.worldPosition)) return;
 

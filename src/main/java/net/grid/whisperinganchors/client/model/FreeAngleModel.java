@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-public final class FreeAngleModel {
+public class FreeAngleModel {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
