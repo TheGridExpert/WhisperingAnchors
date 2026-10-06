@@ -1,0 +1,73 @@
+{
+  "block.whispering_anchors.whispering_anchor": "Шепчущий якорь",
+
+  "block.minecraft.banner.whispering_anchors.anchor": "Якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.black": "Чёрный якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.blue": "Синий якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.brown": "Коричневый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.cyan": "Бирюзовый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.gray": "Серый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.green": "Зелёный якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.light_blue": "Голубой якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.light_gray": "Светло-серый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.lime": "Лаймовый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.magenta": "Пурпурный якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.orange": "Оранжевый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.pink": "Розовый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.purple": "Фиолетовый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.red": "Красный якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.white": "Белый якорь",
+  "block.minecraft.banner.whispering_anchors.anchor.yellow": "Жёлтый якорь",
+
+  "item.whispering_anchors.harkening_bell": "Внемлющий колокол",
+  "item.whispering_anchors.heeding_compass": "Вещий компас",
+  "item.whispering_anchors.anchor_banner_pattern": "Узор флага",
+  "item.whispering_anchors.anchor_banner_pattern.desc": "Якорь",
+
+  "entity.whispering_anchors.anchor": "Якорь",
+
+  "filled_map.whispering_anchors.traversal_tower": "Карта башни перепутий",
+
+  "advancement.whispering_anchors.find_traversal_tower.title": "Якорь мне в кумпол!",
+  "advancement.whispering_anchors.find_traversal_tower.description": "Последуйте за шёпотом к башне перепутий",
+  "advancement.whispering_anchors.get_hit_anchor.title": "Полбу хочешь?",
+  "advancement.whispering_anchors.get_hit_anchor.description": "Узнайте на собственной шкуре, что под раскачанный якорь лучше не вставать",
+  "advancement.whispering_anchors.harken_to_anchor.title": "Малиновый звон",
+  "advancement.whispering_anchors.harken_to_anchor.description": "Позвоните в настроенный внемлющий колокол и перенеситесь к его якорю",
+  "advancement.whispering_anchors.harken_from_falling.title": "Мне только утюг выключить",
+  "advancement.whispering_anchors.harken_from_falling.description": "Спаситесь от смертельного падения с помощью внемлющего колокола",
+  "advancement.whispering_anchors.harken_from_all_dimensions.title": "Позови меня с собой",
+  "advancement.whispering_anchors.harken_from_all_dimensions.description": "Откликнитесь на зов якоря из обычного мира, Незера и Энда",
+  "advancement.whispering_anchors.harken_from_alive_dragon.title": "Нам любые дороги дороги",
+  "advancement.whispering_anchors.harken_from_alive_dragon.description": "Сбегите из Энда с помощью внемлющего колокола, не убивая дракона",
+
+  "message.whispering_anchors.anchor.obstructed": "Шёпот якоря невнятен: якорь загорожен",
+  "message.whispering_anchors.heeding_compass.mode.unknown_towers": "Курс на неведомые башни",
+  "message.whispering_anchors.heeding_compass.mode.known_anchors": "Курс на знакомые якоря",
+  "message.whispering_anchors.heeding_compass.cannot_find.unknown_towers": "Якоря безмолвны: в разумных пределах нет неведомых башен",
+  "message.whispering_anchors.heeding_compass.cannot_find.known_anchors": "Якоря безмолвны: в этом измерении нет знакомых якорей",
+
+  "tooltip.whispering_anchors.harkening_bell.attuned": "Настроен на [%s]",
+  "tooltip.whispering_anchors.heeding_compass.mode.unknown_towers": "Ищет неведомые башни",
+  "tooltip.whispering_anchors.heeding_compass.mode.known_anchors": "Ведёт обратно к знакомым якорям",
+  "tooltip.whispering_anchors.heeding_compass.known_anchors": "Ближайшие знакомые якоря:",
+  "tooltip.whispering_anchors.heeding_compass.known_anchor": " [%s] %s",
+  "tooltip.whispering_anchors.heeding_compass.known_anchor.meters": "%s м",
+  "tooltip.whispering_anchors.heeding_compass.known_anchor.kilometers": "%s км",
+  "tooltip.whispering_anchors.heeding_compass.closer_known_anchors": "  ...ещё %s ближе",
+  "tooltip.whispering_anchors.heeding_compass.more_known_anchors": "  ...ещё %s дальше",
+
+  "subtitles.whispering_anchors.harkening_bell_ringing": "Звон внемлющего колокола",
+  "subtitles.whispering_anchors.whispers": "Шёпот",
+
+  "death.attack.whispering_anchors.anchor_swing": "%1$s раздвлен раскачанным якорем",
+
+  "command.whispering_anchors.extract_loot.success": "Извлечено предметов: %s из подозрительных блоков: %s",
+  "command.whispering_anchors.extract_loot.no_loot": "В указанной области нет подозрительных блоков с добычей",
+  "command.whispering_anchors.extract_loot.too_large": "Слишком много блоков в заданной области (максимум %s; указано %s)",
+
+  "whispering_anchors.configuration.makeAnchorsStatic": "Якоря статичны",
+  "whispering_anchors.configuration.makeAnchorsStatic.desc": "Если включено, шепчущие якоря отображаются неподвижными блоками, а не раскачивающимися сущностями с физикой.",
+  "whispering_anchors.configuration.staticAnchorHitboxes": "Хитбоксы у статичных якорей",
+  "whispering_anchors.configuration.staticAnchorHitboxes.desc": "Если включено, у двух нижних блоков статичных якорей есть хитбокс и столкновения. Действует, только когда включена настройка выше."
+}
