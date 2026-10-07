@@ -17,6 +17,7 @@ import net.neoforged.neoforge.common.data.AdvancementProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -48,6 +49,11 @@ public class ModAdvancementProvider extends AdvancementProvider {
                 .parent(harkenToAnchor)
                 .addCriterion("harken", HarkeningTrigger.TriggerInstance.harkenSavingFromFalling())
                 .save(consumer, WhisperingAnchors.modLoc("adventure/harken_from_falling"), existingFileHelper);
+        Advancement.Builder.advancement()
+                .display(ModItems.HEEDING_COMPASS.toStack(), Component.translatable("advancement.whispering_anchors.shake_heeding_compass.title"), Component.translatable("advancement.whispering_anchors.shake_heeding_compass.description"), null, AdvancementType.TASK, true, true, false)
+                .parent(findTraversalTower)
+                .addCriterion("shake", ModAdvancements.SHOOK_HEEDING_COMPASS.get().createCriterion(new PlayerTrigger.TriggerInstance(Optional.empty())))
+                .save(consumer, WhisperingAnchors.modLoc("adventure/shake_heeding_compass"), existingFileHelper);
         Advancement.Builder.advancement()
                 .display(ModItems.HARKENING_BELL.toStack(), Component.translatable("advancement.whispering_anchors.harken_from_all_dimensions.title"), Component.translatable("advancement.whispering_anchors.harken_from_all_dimensions.description"), null, AdvancementType.CHALLENGE, true, true, false)
                 .parent(ResourceLocation.withDefaultNamespace("nether/use_lodestone"))

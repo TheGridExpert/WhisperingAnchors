@@ -1,0 +1,26 @@
+{
+  "parent": "whispering_anchors:adventure/find_traversal_tower",
+  "criteria": {
+    "shake": {
+      "trigger": "whispering_anchors:shook_heeding_compass"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.whispering_anchors.shake_heeding_compass.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "whispering_anchors:heeding_compass"
+    },
+    "title": {
+      "translate": "advancement.whispering_anchors.shake_heeding_compass.title"
+    }
+  },
+  "requirements": [
+    [
+      "shake"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

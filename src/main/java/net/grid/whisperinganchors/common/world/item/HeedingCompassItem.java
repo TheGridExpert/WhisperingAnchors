@@ -1,5 +1,6 @@
 package net.grid.whisperinganchors.common.world.item;
 
+import net.grid.whisperinganchors.common.core.ModAdvancements;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModStructures;
@@ -15,6 +16,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -100,6 +102,7 @@ public class HeedingCompassItem extends AttunableItem {
         }
 
         player.startUsingItem(usedHand);
+
         return InteractionResultHolder.consume(stack);
     }
 
@@ -107,8 +110,9 @@ public class HeedingCompassItem extends AttunableItem {
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
         if (level.isClientSide()) return stack;
 
+        if (!this.pendingSearches.containsKey(livingEntity)) return stack;
+
         Optional<AnchorAttunement> result = this.pendingSearches.remove(livingEntity);
-        if (result == null) return stack;
 
         startCooldown(livingEntity);
 
@@ -118,6 +122,10 @@ public class HeedingCompassItem extends AttunableItem {
             }
         } else {
             stack.set(ModDataComponents.ANCHOR_ATTUNEMENT, result.get());
+
+            if (livingEntity instanceof ServerPlayer serverPlayer) {
+                ModAdvancements.SHOOK_HEEDING_COMPASS.get().trigger(serverPlayer);
+            }
         }
 
         return stack;
@@ -127,7 +135,8 @@ public class HeedingCompassItem extends AttunableItem {
     public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
         if (entity.level().isClientSide()) return;
 
-        if (this.pendingSearches.remove(entity) != null) {
+        if (this.pendingSearches.containsKey(entity)) {
+            this.pendingSearches.remove(entity);
             startCooldown(entity);
         }
     }
