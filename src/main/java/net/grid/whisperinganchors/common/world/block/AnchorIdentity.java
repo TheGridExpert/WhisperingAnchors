@@ -1,6 +1,6 @@
 package net.grid.whisperinganchors.common.world.block;
 
-import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
 import net.minecraft.core.BlockPos;
@@ -26,7 +26,7 @@ public interface AnchorIdentity {
     }
 
     static @Nullable AnchorIdentity find(Level level, BlockPos top) {
-        if (ModConfig.areAnchorsStatic()) {
+        if (ModConfigs.areAnchorsStatic()) {
             return level.getBlockEntity(top) instanceof WhisperingAnchorBlockEntity blockEntity ? blockEntity : null;
         }
 

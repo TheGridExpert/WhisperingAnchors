@@ -1,7 +1,7 @@
 package net.grid.whisperinganchors.common.world.block;
 
 import com.mojang.serialization.MapCodec;
-import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.world.blockentity.WhisperingAnchorBlockEntity;
 import net.grid.whisperinganchors.common.core.ModBlockEntities;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
@@ -93,9 +93,9 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return switch (state.getValue(PART)) {
-            case TOP -> ModConfig.hasStaticAnchorHitboxes() ? TOP_SHAPE : CHAIN_SHAPE;
-            case MIDDLE -> ModConfig.hasStaticAnchorHitboxes() ? MIDDLE_SHAPE : Shapes.empty();
-            case BOTTOM -> ModConfig.hasStaticAnchorHitboxes() ? BOTTOM_SHAPE : Shapes.empty();
+            case TOP -> ModConfigs.hasStaticAnchorHitboxes() ? TOP_SHAPE : CHAIN_SHAPE;
+            case MIDDLE -> ModConfigs.hasStaticAnchorHitboxes() ? MIDDLE_SHAPE : Shapes.empty();
+            case BOTTOM -> ModConfigs.hasStaticAnchorHitboxes() ? BOTTOM_SHAPE : Shapes.empty();
         };
     }
 
@@ -235,7 +235,7 @@ public class WhisperingAnchorBlock extends Block implements EntityBlock {
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && state.getValue(PART) == AnchorPart.TOP && level instanceof ServerLevel serverLevel && ModConfig.areAnchorsStatic()) {
+        if (!state.is(newState.getBlock()) && state.getValue(PART) == AnchorPart.TOP && level instanceof ServerLevel serverLevel && ModConfigs.areAnchorsStatic()) {
             AnchorEntity.spawnCrumbleParticles(serverLevel, AnchorEntity.getRestingBody(pos));
         }
 

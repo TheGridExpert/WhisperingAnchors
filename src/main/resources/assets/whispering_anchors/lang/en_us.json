@@ -68,6 +68,15 @@
   "command.whispering_anchors.extract_loot.no_loot": "No loot found in suspicious blocks in the specified area",
   "command.whispering_anchors.extract_loot.too_large": "Too many blocks in the specified area (maximum %s, specified %s)",
 
+  "whispering_anchors.configuration.bellUseDuration": "Harkening Bell Use Duration",
+  "whispering_anchors.configuration.bellUseDuration.desc": "How many ticks the harkening bell has to ring before it teleports its ringer.",
+  "whispering_anchors.configuration.bellCooldown": "Harkening Bell Cooldown",
+  "whispering_anchors.configuration.bellCooldown.desc": "How many ticks the harkening bell is on cooldown after teleporting its ringer.",
+  "whispering_anchors.configuration.bellFailedCooldown": "Harkening Bell Failed Cooldown",
+  "whispering_anchors.configuration.bellFailedCooldown.desc": "How many ticks the harkening bell is on cooldown after its ringing is interrupted or finds no safe place to teleport to.",
+  "whispering_anchors.configuration.compassCooldown": "Heeding Compass Cooldown",
+  "whispering_anchors.configuration.compassCooldown.desc": "How many ticks the heeding compass is on cooldown after it is shaken, whether or not the shaking is finished.",
+
   "whispering_anchors.configuration.makeAnchorsStatic": "Make Anchors Static",
   "whispering_anchors.configuration.makeAnchorsStatic.desc": "When enabled, whispering anchors are drawn as still blocks instead of swinging entities with physics.",
   "whispering_anchors.configuration.staticAnchorHitboxes": "Static Anchors Have Hitboxes",

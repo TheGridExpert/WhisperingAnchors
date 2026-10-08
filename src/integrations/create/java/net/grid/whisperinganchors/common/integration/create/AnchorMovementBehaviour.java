@@ -7,7 +7,7 @@ import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.contraptions.render.ContraptionMatrices;
 import com.simibubi.create.foundation.virtualWorld.VirtualRenderWorld;
 import net.grid.whisperinganchors.api.AnchorFeatures;
-import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.core.ModBlocks;
 import net.grid.whisperinganchors.common.world.block.AnchorPart;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
@@ -36,7 +36,7 @@ public class AnchorMovementBehaviour implements MovementBehaviour {
     }
 
     private static boolean isSwinging(BlockState state) {
-        return WhisperingAnchorBlock.isPart(state, AnchorPart.TOP) && !ModConfig.areAnchorsStatic();
+        return WhisperingAnchorBlock.isPart(state, AnchorPart.TOP) && !ModConfigs.areAnchorsStatic();
     }
 
     @Override

@@ -1,7 +1,43 @@
 {
-  "harkening_bell_ringing": {
+  "harkening_bell_ringing_0": {
     "sounds": [
-      "whispering_anchors:harkening_bell_ringing"
+      "whispering_anchors:harkening_bell_ringing/segment_0"
+    ],
+    "subtitle": "subtitles.whispering_anchors.harkening_bell_ringing"
+  },
+  "harkening_bell_ringing_1": {
+    "sounds": [
+      "whispering_anchors:harkening_bell_ringing/segment_1"
+    ],
+    "subtitle": "subtitles.whispering_anchors.harkening_bell_ringing"
+  },
+  "harkening_bell_ringing_2": {
+    "sounds": [
+      "whispering_anchors:harkening_bell_ringing/segment_2"
+    ],
+    "subtitle": "subtitles.whispering_anchors.harkening_bell_ringing"
+  },
+  "harkening_bell_ringing_3": {
+    "sounds": [
+      "whispering_anchors:harkening_bell_ringing/segment_3"
+    ],
+    "subtitle": "subtitles.whispering_anchors.harkening_bell_ringing"
+  },
+  "harkening_bell_ringing_4": {
+    "sounds": [
+      "whispering_anchors:harkening_bell_ringing/segment_4"
+    ],
+    "subtitle": "subtitles.whispering_anchors.harkening_bell_ringing"
+  },
+  "harkening_bell_ringing_5": {
+    "sounds": [
+      "whispering_anchors:harkening_bell_ringing/segment_5"
+    ],
+    "subtitle": "subtitles.whispering_anchors.harkening_bell_ringing"
+  },
+  "harkening_bell_ringing_6": {
+    "sounds": [
+      "whispering_anchors:harkening_bell_ringing/segment_6"
     ],
     "subtitle": "subtitles.whispering_anchors.harkening_bell_ringing"
   },

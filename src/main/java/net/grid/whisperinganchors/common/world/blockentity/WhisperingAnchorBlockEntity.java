@@ -1,7 +1,7 @@
 package net.grid.whisperinganchors.common.world.blockentity;
 
 import net.grid.whisperinganchors.client.sound.WhisperingAnchorSoundInstance;
-import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
 import net.grid.whisperinganchors.common.core.ModBlockEntities;
@@ -38,7 +38,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
     }
 
     public @Nullable AnchorIdentity getIdentity() {
-        return ModConfig.areAnchorsStatic() ? this : getAnchor();
+        return ModConfigs.areAnchorsStatic() ? this : getAnchor();
     }
 
     public void clientTick() {
@@ -53,7 +53,7 @@ public class WhisperingAnchorBlockEntity extends BlockEntity implements AnchorId
             serverLevel.destroyBlock(this.worldPosition, true);
             return;
         }
-        if (ModConfig.areAnchorsStatic()) return;
+        if (ModConfigs.areAnchorsStatic()) return;
         if (this.anchor != null && this.anchor.isAlive() && this.anchor.isBoundTo(this.worldPosition)) return;
 
         AABB searchBox = AnchorEntity.getSearchArea(this.worldPosition);

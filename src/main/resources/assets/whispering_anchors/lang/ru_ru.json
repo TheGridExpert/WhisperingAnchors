@@ -68,6 +68,15 @@
   "command.whispering_anchors.extract_loot.no_loot": "В указанной области нет подозрительных блоков с добычей",
   "command.whispering_anchors.extract_loot.too_large": "Слишком много блоков в заданной области (максимум %s; указано %s)",
 
+  "whispering_anchors.configuration.bellUseDuration": "Длительность звона внемлющего колокола",
+  "whispering_anchors.configuration.bellUseDuration.desc": "Сколько тиков должен звонить внемлющий колокол, прежде чем перенести звонящего.",
+  "whispering_anchors.configuration.bellCooldown": "Перезарядка внемлющего колокола",
+  "whispering_anchors.configuration.bellCooldown.desc": "Сколько тиков внемлющий колокол перезаряжается после переноса звонящего.",
+  "whispering_anchors.configuration.bellFailedCooldown": "Перезарядка внемлющего колокола после неудачи",
+  "whispering_anchors.configuration.bellFailedCooldown.desc": "Сколько тиков внемлющий колокол перезаряжается, если звон прерван или не найдено безопасное место для переноса.",
+  "whispering_anchors.configuration.compassCooldown": "Перезарядка вещего компаса",
+  "whispering_anchors.configuration.compassCooldown.desc": "Сколько тиков вещий компас перезаряжается после встряхивания, даже если оно не завершено.",
+
   "whispering_anchors.configuration.makeAnchorsStatic": "Якоря статичны",
   "whispering_anchors.configuration.makeAnchorsStatic.desc": "Если включено, шепчущие якоря отображаются неподвижными блоками, а не раскачивающимися сущностями с физикой.",
   "whispering_anchors.configuration.staticAnchorHitboxes": "Хитбоксы у статичных якорей",

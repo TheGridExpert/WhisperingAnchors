@@ -1,7 +1,7 @@
 package net.grid.whisperinganchors.common.world.entity;
 
 import net.grid.whisperinganchors.api.AnchorFeatures;
-import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
 import net.grid.whisperinganchors.common.world.block.AnchorPart;
@@ -263,7 +263,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
                 return;
             }
 
-            if (ModConfig.areAnchorsStatic()) {
+            if (ModConfigs.areAnchorsStatic()) {
                 if (level().getBlockEntity(getBoundPos()) instanceof WhisperingAnchorBlockEntity blockEntity) {
                     blockEntity.copyIdentityFrom(this);
                 }

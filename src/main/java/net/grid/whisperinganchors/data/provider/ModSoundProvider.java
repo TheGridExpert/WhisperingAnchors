@@ -14,9 +14,11 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 
     @Override
     public void registerSounds() {
-        add(ModSounds.HARKENING_BELL_RINGING, definition()
-                .subtitle("subtitles.whispering_anchors.harkening_bell_ringing")
-                .with(sound(WhisperingAnchors.modLoc("harkening_bell_ringing"))));
+        for (int segment = 0; segment < ModSounds.HARKENING_BELL_RINGING.size(); segment++) {
+            add(ModSounds.HARKENING_BELL_RINGING.get(segment), definition()
+                    .subtitle("subtitles.whispering_anchors.harkening_bell_ringing")
+                    .with(sound(WhisperingAnchors.modLoc("harkening_bell_ringing/segment_" + segment))));
+        }
         add(ModSounds.WHISPERS, definition()
                 .subtitle("subtitles.whispering_anchors.whispers")
                 .with(sound(WhisperingAnchors.modLoc("whispers"))));

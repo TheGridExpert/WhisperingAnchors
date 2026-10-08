@@ -6,6 +6,8 @@ import net.grid.whisperinganchors.common.world.item.component.AnchorAttunement;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -35,6 +37,12 @@ public abstract class AttunableItem extends Item {
             stack.remove(ModDataComponents.ANCHOR_ATTUNEMENT);
         } else if (updated != attunement) {
             stack.set(ModDataComponents.ANCHOR_ATTUNEMENT, updated);
+        }
+    }
+
+    public void startCooldown(LivingEntity entity, int ticks) {
+        if (ticks > 0 && entity instanceof Player player) {
+            player.getCooldowns().addCooldown(this, ticks);
         }
     }
 

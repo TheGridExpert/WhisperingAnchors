@@ -2,6 +2,7 @@ package net.grid.whisperinganchors.common.world.item;
 
 import net.grid.whisperinganchors.WhisperingAnchors;
 import net.grid.whisperinganchors.client.sound.HarkeningBellSoundInstance;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.core.ModAdvancements;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModItems;
@@ -49,10 +50,6 @@ public class HarkeningBellItem extends AttunableItem {
 
     public static final ResourceLocation ATTUNED_PROPERTY = WhisperingAnchors.modLoc("attuned");
     public static final ResourceLocation RINGING_PROPERTY = WhisperingAnchors.modLoc("ringing");
-
-    public static final int USE_DURATION = 160;
-    public static final int USE_COOLDOWN = 80;
-    public static final int USE_COOLDOWN_UNSUCCESSFUL = 20;
 
     private static final float SOUL_SPIN = 0.18F;
     private static final float RINGER_SOUL_RADIUS = 0.7F;
@@ -108,12 +105,11 @@ public class HarkeningBellItem extends AttunableItem {
 
     @Override
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
-        float progress = 1.0F - (float) remainingUseDuration / USE_DURATION;
+        int duration = getUseDuration(stack, livingEntity);
+        float progress = 1.0F - (float) remainingUseDuration / duration;
 
         if (level.isClientSide) {
-            if (remainingUseDuration == USE_DURATION) {
-                HarkeningBellSoundInstance.play(livingEntity);
-            }
+            HarkeningBellSoundInstance.playSegment(livingEntity, duration - remainingUseDuration);
 
             HarkeningSoulParticleOption particle = new HarkeningSoulParticleOption(RINGER_SOUL_RADIUS, SOUL_SPIN);
             for (int i = particleCountForTick(level.random, progress); i > 0; i--) {
@@ -171,9 +167,7 @@ public class HarkeningBellItem extends AttunableItem {
 
         Optional<AnchorLanding> landing = AnchorLanding.find(anchorLevel, anchorPos.pos(), livingEntity);
         if (landing.isEmpty()) {
-            if (livingEntity instanceof Player player) {
-                player.getCooldowns().addCooldown(this, USE_COOLDOWN_UNSUCCESSFUL);
-            }
+            startCooldown(livingEntity, ModConfigs.getBellFailedCooldown());
             return stack;
         }
 
@@ -192,7 +186,7 @@ public class HarkeningBellItem extends AttunableItem {
 
         arrived.resetFallDistance();
         if (arrived instanceof Player player) {
-            player.getCooldowns().addCooldown(this, USE_COOLDOWN);
+            startCooldown(player, ModConfigs.getBellCooldown());
 
             if (player instanceof ServerPlayer serverPlayer) {
                 ModAdvancements.HARKENED_TO_ANCHOR.get().trigger(serverPlayer, level.dimension(), savedFromLethalFall, dragonIsAlive);
@@ -254,7 +248,7 @@ public class HarkeningBellItem extends AttunableItem {
 
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity entity) {
-        return USE_DURATION;
+        return ModConfigs.getBellUseDuration(entity.level().isClientSide);
     }
 
     @Override

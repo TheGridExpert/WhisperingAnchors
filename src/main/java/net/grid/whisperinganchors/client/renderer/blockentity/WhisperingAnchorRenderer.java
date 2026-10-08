@@ -2,7 +2,7 @@ package net.grid.whisperinganchors.client.renderer.blockentity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.grid.whisperinganchors.client.renderer.AnchorModelRenderer;
-import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.integration.SubLevelHandler;
 import net.grid.whisperinganchors.common.world.block.AnchorIdentity;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
@@ -40,7 +40,7 @@ public class WhisperingAnchorRenderer implements BlockEntityRenderer<WhisperingA
     @Override
     public void render(WhisperingAnchorBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         Level level = blockEntity.getLevel();
-        if (level == null || !ModConfig.areAnchorsStatic()) return;
+        if (level == null || !ModConfigs.areAnchorsStatic()) return;
 
         BlockPos top = blockEntity.getBlockPos();
         Vec3 centreOfMass = AnchorEntity.getRestingCentreOfMass(top);

@@ -1,13 +1,13 @@
 package net.grid.whisperinganchors;
 
-import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.core.*;
+import net.grid.whisperinganchors.common.event.ConfigSyncEvents;
 import net.grid.whisperinganchors.common.integration.ModIntegration;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig.Type;
 
 @Mod(WhisperingAnchors.MODID)
 public class WhisperingAnchors {
@@ -28,10 +28,12 @@ public class WhisperingAnchors {
         ModMapDecorations.register(eventBus);
         ModAdvancements.register(eventBus);
         ModRecipes.register(eventBus);
+        ModPayloads.register(eventBus);
 
         ModIntegration.initializeAll(eventBus);
 
-        modContainer.registerConfig(Type.SERVER, ModConfig.serverSpec);
+        ModConfigs.register(modContainer);
+        eventBus.addListener(ConfigSyncEvents::syncOnReload);
     }
 
     public static ResourceLocation modLoc(String path) {

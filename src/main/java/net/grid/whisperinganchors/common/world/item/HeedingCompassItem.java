@@ -2,6 +2,7 @@ package net.grid.whisperinganchors.common.world.item;
 
 import net.grid.whisperinganchors.common.core.ModAdvancements;
 import net.grid.whisperinganchors.common.core.ModBlocks;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.core.ModDataComponents;
 import net.grid.whisperinganchors.common.core.ModStructures;
 import net.grid.whisperinganchors.common.integration.SubLevelHandler;
@@ -52,7 +53,6 @@ import java.util.stream.Collectors;
 public class HeedingCompassItem extends AttunableItem {
 
     public static final int USE_DURATION = 60;
-    public static final int USE_COOLDOWN = 20;
 
     private static final int SEARCH_RADIUS = 100;
 
@@ -114,7 +114,7 @@ public class HeedingCompassItem extends AttunableItem {
 
         Optional<AnchorAttunement> result = this.pendingSearches.remove(livingEntity);
 
-        startCooldown(livingEntity);
+        startCooldown(livingEntity, ModConfigs.getCompassCooldown());
 
         if (result.isEmpty()) {
             if (livingEntity instanceof Player player) {
@@ -137,13 +137,7 @@ public class HeedingCompassItem extends AttunableItem {
 
         if (this.pendingSearches.containsKey(entity)) {
             this.pendingSearches.remove(entity);
-            startCooldown(entity);
-        }
-    }
-
-    private void startCooldown(LivingEntity entity) {
-        if (entity instanceof Player player) {
-            player.getCooldowns().addCooldown(this, USE_COOLDOWN);
+            startCooldown(entity, ModConfigs.getCompassCooldown());
         }
     }
 

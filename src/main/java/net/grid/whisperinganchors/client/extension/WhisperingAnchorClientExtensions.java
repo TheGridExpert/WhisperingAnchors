@@ -1,6 +1,6 @@
 package net.grid.whisperinganchors.client.extension;
 
-import net.grid.whisperinganchors.common.config.ModConfig;
+import net.grid.whisperinganchors.common.core.ModConfigs;
 import net.grid.whisperinganchors.common.core.ModParticles;
 import net.grid.whisperinganchors.common.world.block.WhisperingAnchorBlock;
 import net.grid.whisperinganchors.common.world.entity.AnchorEntity;
@@ -26,7 +26,7 @@ public class WhisperingAnchorClientExtensions implements IClientBlockExtensions 
     public boolean addHitEffects(BlockState state, Level level, HitResult target, ParticleEngine manager) {
         if (target instanceof BlockHitResult hit) {
             BlockPos top = WhisperingAnchorBlock.getTopPos(hit.getBlockPos(), state);
-            if (ModConfig.areAnchorsStatic()) {
+            if (ModConfigs.areAnchorsStatic()) {
                 spawnCrumbParticles(AnchorEntity.getRestingBody(top), level.getRandom(), manager);
             } else {
                 for (AnchorEntity anchor : AnchorEntity.findBoundTo(level, top)) {

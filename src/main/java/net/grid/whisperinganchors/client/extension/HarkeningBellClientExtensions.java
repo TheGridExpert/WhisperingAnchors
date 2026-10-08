@@ -2,7 +2,7 @@ package net.grid.whisperinganchors.client.extension;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.grid.whisperinganchors.common.world.item.HarkeningBellItem;
+import net.grid.whisperinganchors.client.sound.HarkeningBellPeal;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
@@ -35,15 +35,6 @@ public class HarkeningBellClientExtensions extends UseAnimationClientExtensions 
     private static final float ARM_ROLL = -14.0F;
 
     private static final float RING_AMPLITUDE = 34.0F;
-    private static final float TICKS_PER_SECOND = 20.0F;
-    private static final float[] RING_TIMES = {
-            0.300F, 0.650F,
-            1.300F, 1.675F,
-            2.400F, 2.800F,
-            3.500F, 3.950F,
-            4.600F, 5.000F,
-            5.845F
-    };
     private static final float RING_BOB = 0.025F;
     private static final float RING_PIVOT_RISE = 0.25F;
     private static final float SPRITE_HEIGHT = 0.68F;
@@ -91,22 +82,24 @@ public class HarkeningBellClientExtensions extends UseAnimationClientExtensions 
     }
 
     private static float calculateBellSwingAngle(float used) {
-        float seconds = used / TICKS_PER_SECOND;
+        HarkeningBellPeal peal = HarkeningBellPeal.get();
+        float[] rings = peal.getRingTicks();
+        if (rings.length == 0) return 0.0F;
 
-        if (seconds <= RING_TIMES[0]) {
-            return RING_AMPLITUDE * (1.0F - Mth.cos((float) Math.PI * seconds / RING_TIMES[0])) * 0.5F;
+        if (used <= rings[0]) {
+            return RING_AMPLITUDE * (1.0F - Mth.cos((float) Math.PI * used / rings[0])) * 0.5F;
         }
 
-        for (int ring = 0; ring < RING_TIMES.length - 1; ring++) {
-            if (seconds <= RING_TIMES[ring + 1]) {
-                float phase = (seconds - RING_TIMES[ring]) / (RING_TIMES[ring + 1] - RING_TIMES[ring]);
+        for (int ring = 0; ring < rings.length - 1; ring++) {
+            if (used <= rings[ring + 1]) {
+                float phase = (used - rings[ring]) / (rings[ring + 1] - rings[ring]);
                 return RING_AMPLITUDE * getSwingDirection(ring) * Mth.cos((float) Math.PI * phase);
             }
         }
 
-        int last = RING_TIMES.length - 1;
-        float tail = Math.max(0.05F, HarkeningBellItem.USE_DURATION / TICKS_PER_SECOND - RING_TIMES[last]);
-        float phase = Mth.clamp((seconds - RING_TIMES[last]) / tail, 0.0F, 1.0F);
+        int last = rings.length - 1;
+        float tail = Math.max(1.0F, peal.getDuration() - rings[last]);
+        float phase = Mth.clamp((used - rings[last]) / tail, 0.0F, 1.0F);
 
         return RING_AMPLITUDE * getSwingDirection(last) * (1.0F + Mth.cos((float) Math.PI * phase)) * 0.5F;
     }
