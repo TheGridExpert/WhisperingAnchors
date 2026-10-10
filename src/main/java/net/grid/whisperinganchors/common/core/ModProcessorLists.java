@@ -26,6 +26,7 @@ public class ModProcessorLists {
 
     public static final ResourceKey<StructureProcessorList> TRAVERSAL_TOWER = create("traversal_tower");
     public static final ResourceKey<StructureProcessorList> TRAVERSAL_TOWER_UNDERGROUND = create("traversal_tower_underground");
+    public static final ResourceKey<StructureProcessorList> TRAVERSAL_TOWER_FEATURES = create("traversal_tower_features");
 
     public static void bootstrap(BootstrapContext<StructureProcessorList> context) {
         context.register(TRAVERSAL_TOWER, new StructureProcessorList(List.of(
@@ -39,6 +40,14 @@ public class ModProcessorLists {
                 new CappedProcessor(createBuriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GUARANTEED), ConstantInt.of(1)),
                 new CappedProcessor(createBuriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_RARE), ConstantInt.of(1)),
                 new CappedProcessor(createBuriedLoot(ModLootTables.TRAVERSAL_TOWER_ARCHAEOLOGY_GENERAL), UniformInt.of(24, 48))
+        )));
+
+        context.register(TRAVERSAL_TOWER_FEATURES, new StructureProcessorList(List.of(
+                new WeatheringProcessor(List.of(
+                    new WeatheringProcessor.Rule(Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, 0.14F),
+                    new WeatheringProcessor.Rule(Blocks.COBBLESTONE_STAIRS, Blocks.MOSSY_COBBLESTONE_STAIRS, 0.14F),
+                    new WeatheringProcessor.Rule(Blocks.COBBLESTONE_WALL, Blocks.MOSSY_COBBLESTONE_WALL, 0.14F)
+            ))
         )));
     }
 

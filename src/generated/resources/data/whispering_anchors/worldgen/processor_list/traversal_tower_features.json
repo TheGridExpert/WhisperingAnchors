@@ -1,0 +1,24 @@
+{
+  "processors": [
+    {
+      "processor_type": "whispering_anchors:weathering",
+      "rules": [
+        {
+          "chance": 0.14,
+          "input": "minecraft:cobblestone",
+          "output": "minecraft:mossy_cobblestone"
+        },
+        {
+          "chance": 0.14,
+          "input": "minecraft:cobblestone_stairs",
+          "output": "minecraft:mossy_cobblestone_stairs"
+        },
+        {
+          "chance": 0.14,
+          "input": "minecraft:cobblestone_wall",
+          "output": "minecraft:mossy_cobblestone_wall"
+        }
+      ]
+    }
+  ]
+}

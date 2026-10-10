@@ -3,7 +3,7 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "whispering_anchors:traversal_tower",
+        "location": "whispering_anchors:traversal_tower/tower",
         "processors": "whispering_anchors:traversal_tower",
         "projection": "rigid"
       },

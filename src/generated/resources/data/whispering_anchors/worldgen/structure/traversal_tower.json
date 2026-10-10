@@ -2,24 +2,98 @@
   "type": "whispering_anchors:traversal_tower",
   "biomes": "#whispering_anchors:has_structure/traversal_tower",
   "captain_chance": 0.5,
-  "footprint": 13,
-  "ground_level": 0,
+  "max_distance_from_center": 80,
   "max_scan_y": -15,
-  "max_terrain_difference": 10,
   "min_scan_y": -55,
   "pillagers": {
     "type": "minecraft:uniform",
     "max_inclusive": 8,
     "min_inclusive": 5
   },
+  "pool_aliases": [
+    {
+      "type": "minecraft:random_group",
+      "groups": [
+        {
+          "data": [
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/west",
+              "target": "whispering_anchors:traversal_tower/food_plates"
+            },
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/south",
+              "target": "whispering_anchors:traversal_tower/feature_plates"
+            },
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/east",
+              "target": "whispering_anchors:traversal_tower/feature_plates"
+            }
+          ],
+          "weight": 1
+        },
+        {
+          "data": [
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/west",
+              "target": "whispering_anchors:traversal_tower/feature_plates"
+            },
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/south",
+              "target": "whispering_anchors:traversal_tower/food_plates"
+            },
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/east",
+              "target": "whispering_anchors:traversal_tower/feature_plates"
+            }
+          ],
+          "weight": 1
+        },
+        {
+          "data": [
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/west",
+              "target": "whispering_anchors:traversal_tower/feature_plates"
+            },
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/south",
+              "target": "whispering_anchors:traversal_tower/feature_plates"
+            },
+            {
+              "type": "minecraft:direct",
+              "alias": "whispering_anchors:traversal_tower/plate_slots/east",
+              "target": "whispering_anchors:traversal_tower/food_plates"
+            }
+          ],
+          "weight": 1
+        }
+      ]
+    }
+  ],
   "scan_step": 10,
-  "search_radius": 2,
+  "site_search": {
+    "footprint": 14,
+    "max_terrain_difference": 10,
+    "radius": 4,
+    "surroundings": 24
+  },
+  "size": 7,
   "spawn_floors": "whispering_anchors:traversal_tower_floors",
   "spawn_overrides": {},
-  "start_pool": "whispering_anchors:traversal_tower",
+  "start_height": {
+    "absolute": -7
+  },
+  "start_jigsaw_name": "whispering_anchors:traversal_tower_center",
+  "start_pool": "whispering_anchors:traversal_tower/base_plates",
   "step": "surface_structures",
   "terrain_adaptation": "beard_thin",
-  "village_clearance": 8,
   "vindicators": {
     "type": "minecraft:uniform",
     "max_inclusive": 2,
