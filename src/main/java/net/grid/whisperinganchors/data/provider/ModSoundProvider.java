@@ -19,6 +19,9 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
                     .subtitle("subtitles.whispering_anchors.harkening_bell_ringing")
                     .with(sound(WhisperingAnchors.modLoc("harkening_bell_ringing/segment_" + segment))));
         }
+        add(ModSounds.HARKENING_BELL_ABRUPTED, definition()
+                .subtitle("subtitles.whispering_anchors.harkening_bell_abrupted")
+                .with(sound(WhisperingAnchors.modLoc("harkening_bell_abrupted"))));
         add(ModSounds.WHISPERS, definition()
                 .subtitle("subtitles.whispering_anchors.whispers")
                 .with(sound(WhisperingAnchors.modLoc("whispers"))));

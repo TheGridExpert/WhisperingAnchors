@@ -60,7 +60,8 @@ table.
 
 This project uses free-to-use sounds listed below:
 
-| Name                     | Sound Effects                | Author                                               | Source                                                            | License                                                       |
-|--------------------------|------------------------------|------------------------------------------------------|-------------------------------------------------------------------|---------------------------------------------------------------|
-| Three Bells, Ship Time   | "harkening_bell_ringing.ogg" | [Benboncan](https://freesound.org/people/Benboncan/) | [Freesound](https://freesound.org/people/Benboncan/sounds/77698/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)     |
-| Four_Voices_Whispering_6 | "whispers.ogg"               | [geoneo0](https://freesound.org/people/geoneo0/)     | [Freesound](https://freesound.org/people/geoneo0/sounds/193812/)  | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| Name                     | Sound Effects                              | Author                                                         | Source                                                                  | License                                                       |
+|--------------------------|--------------------------------------------|----------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------|
+| Three Bells, Ship Time   | "harkening_bell_ringing/segment_[0-6].ogg" | [Benboncan](https://freesound.org/people/Benboncan/)           | [Freesound](https://freesound.org/people/Benboncan/sounds/77698/)       | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)     |
+| Four_Voices_Whispering_6 | "whispers.ogg"                             | [geoneo0](https://freesound.org/people/geoneo0/)               | [Freesound](https://freesound.org/people/geoneo0/sounds/193812/)        | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| Sword sounds compilation | "harkening_bell_abrupted.ogg"              | [SamsterBirdies](https://freesound.org/people/SamsterBirdies/) | [Freesound](https://freesound.org/people/SamsterBirdies/sounds/345308/) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |

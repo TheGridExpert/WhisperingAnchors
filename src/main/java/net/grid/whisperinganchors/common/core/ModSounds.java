@@ -16,6 +16,7 @@ public class ModSounds {
     public static final List<DeferredHolder<SoundEvent, SoundEvent>> HARKENING_BELL_RINGING = IntStream.range(0, 7)
             .mapToObj(segment -> SOUND_EVENTS.register("harkening_bell_ringing_" + segment, SoundEvent::createVariableRangeEvent))
             .toList();
+    public static final DeferredHolder<SoundEvent, SoundEvent> HARKENING_BELL_ABRUPTED = SOUND_EVENTS.register("harkening_bell_abrupted", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> WHISPERS = SOUND_EVENTS.register("whispers", SoundEvent::createVariableRangeEvent);
 
     public static void register(IEventBus eventBus) {

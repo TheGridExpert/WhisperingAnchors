@@ -1,4 +1,10 @@
 {
+  "harkening_bell_abrupted": {
+    "sounds": [
+      "whispering_anchors:harkening_bell_abrupted"
+    ],
+    "subtitle": "subtitles.whispering_anchors.harkening_bell_abrupted"
+  },
   "harkening_bell_ringing_0": {
     "sounds": [
       "whispering_anchors:harkening_bell_ringing/segment_0"
