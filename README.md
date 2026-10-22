@@ -7,7 +7,7 @@ discovered, without the travel feeling overpowered.
 
 ## Content
 
-<img src="resources/screenshots/tower_two.png" style="float:right;width:34em;margin-top:-2em;margin-left:1em;margin-bottom:1em"></img>
+<img src="resources/screenshots/tower_two.png" align="right" width="40%">
 
 ### Traversal Towers
 
