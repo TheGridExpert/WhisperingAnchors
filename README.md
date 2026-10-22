@@ -5,6 +5,9 @@
 **Whispering Anchors** is a Minecraft mod that adds a convenient way to travel between places the player has already
 discovered, without the travel feeling overpowered.
 
+<img src="resources/screenshots/tower_outside.png" style="float:right;clear:right;width:34em;margin-left:1em"></img>
+<img src="resources/screenshots/tower_anchor.png" style="float:right;clear:right;width:34em;margin-left:1em"></img>
+
 ## Content
 
 ### Traversal Towers
@@ -15,8 +18,6 @@ their power and use them as transportation hubs.
 
 If you weren't lucky enough to come across a tower yourself, a map leading to the nearest one can be found at pillager
 outposts.
-
-(a traversal tower image here)
 
 The towers are guarded by pillagers and vindicators. Once you've cleared them out, the tower is up for your use.
 
