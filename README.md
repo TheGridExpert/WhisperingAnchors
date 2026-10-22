@@ -27,8 +27,6 @@ The towers are guarded by pillagers and vindicators. Once you've cleared them ou
 In the center of every tower hangs a **Whispering Anchor** — the relic itself. It's fragile and old, so it can't be
 collected or crafted.
 
-(an image of an anchor in a traversal tower with a pillager making a jojo pose nearby)
-
 All anchors have default names, but you can rename them with a name tag so you never pick the wrong stop. You can also
 color them by using a dye on them.
 
