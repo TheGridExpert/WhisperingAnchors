@@ -3,6 +3,7 @@
   "package": "net.grid.whisperinganchors.misc.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "FishingHookMixin",
     "MapItemSavedDataMixin",
     "SimAssemblyContraptionMixin",
     "accessor.BrushableBlockEntityAccessor",
