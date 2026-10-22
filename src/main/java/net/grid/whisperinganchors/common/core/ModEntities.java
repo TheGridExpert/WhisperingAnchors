@@ -16,6 +16,7 @@ public class ModEntities {
 
     public static final DeferredHolder<EntityType<?>, EntityType<AnchorEntity>> ANCHOR = registerEntity("anchor", EntityType.Builder.of(AnchorEntity::new, MobCategory.MISC)
             .sized(AnchorEntity.BODY_WIDTH, AnchorEntity.BODY_HEIGHT)
+            .eyeHeight(AnchorEntity.EYE_HEIGHT)
             .attach(EntityAttachment.NAME_TAG, 0.0F, AnchorEntity.BODY_TOP, 0.0F)
             .clientTrackingRange(10)
             .updateInterval(1)

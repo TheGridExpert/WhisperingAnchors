@@ -30,6 +30,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Leashable;
+import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -46,7 +48,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
-public class AnchorEntity extends Entity implements AnchorIdentity {
+public class AnchorEntity extends Entity implements AnchorIdentity, Leashable {
 
     public static final String KEY_BOUND_POS = "BoundPos";
     public static final String KEY_COLOR = "Color";
@@ -56,6 +58,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final String KEY_ANGLE_Z = "AngleZ";
     private static final String KEY_VELOCITY_X = "VelocityX";
     private static final String KEY_VELOCITY_Z = "VelocityZ";
+    private static final String KEY_ROPE_LENGTH = "RopeLength";
 
     public static final int UNDYED = -1;
 
@@ -63,6 +66,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     public static final float BODY_HEIGHT = 2.33F;
     private static final double MODEL_CENTRE_ABOVE_MASS = 0.309;
     public static final float BODY_TOP = (float) MODEL_CENTRE_ABOVE_MASS + BODY_HEIGHT * 0.5F;
+    public static final float EYE_HEIGHT = (float) MODEL_CENTRE_ABOVE_MASS - BODY_HEIGHT * 0.15F;
+    private static final float LEASH_HEIGHT = (float) MODEL_CENTRE_ABOVE_MASS - BODY_HEIGHT * 0.2F;
     public static final double FIXED_CHAIN_LENGTH = 5 / 16.0;
     public static final double CHAIN_LENGTH = 2 / 16.0;
     public static final double SHACKLE_TO_CENTRE = 1.411;
@@ -115,6 +120,14 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
 
     private static final double TIP_BELOW_SHACKLE = SHACKLE_TO_CENTRE + BODY_HEIGHT * 0.5 - MODEL_CENTRE_ABOVE_MASS;
     private static final double TIP_ARM = CHAIN_LENGTH + TIP_BELOW_SHACKLE;
+    private static final double LEASH_BELOW_SHACKLE = SHACKLE_TO_CENTRE - LEASH_HEIGHT;
+
+    private static final double MIN_ROPE_LENGTH = 1.5;
+    private static final double ROPE_CORRECTION = 0.1;
+    private static final double HELD_ROPE_MAX_TENSION = GRAVITY * 0.5;
+    private static final double TIED_ROPE_MAX_TENSION = GRAVITY * 2.0;
+    private static final double MIN_HANG_DEPTH = 0.25;
+    private static final double TAUT_ROPE_DRAG = 0.85;
     private static final double ORBIT_RADIUS = 0.5;
     private static final double ORBIT_NATURAL_RATE = Math.sqrt(GRAVITY * (CHAIN_LENGTH + SHACKLE_TO_CENTRE) / (GYRATION_RADIUS_SQ + (CHAIN_LENGTH + SHACKLE_TO_CENTRE) * (CHAIN_LENGTH + SHACKLE_TO_CENTRE)));
     private static final double ORBIT_SPIN_RATE = ORBIT_NATURAL_RATE * 1.75;
@@ -143,6 +156,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private static final EntityDataAccessor<Float> DATA_BODY_VELOCITY_Z = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_COLOR = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Byte> DATA_ORBIT_DIRECTION = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Float> DATA_ROPE_LENGTH = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.FLOAT);
 
     private final Joint chain = new Joint("Chain", DATA_CHAIN_X, DATA_CHAIN_Z, DATA_CHAIN_VELOCITY_X, DATA_CHAIN_VELOCITY_Z);
     private final Joint body = new Joint("Body", DATA_BODY_X, DATA_BODY_Z, DATA_BODY_VELOCITY_X, DATA_BODY_VELOCITY_Z);
@@ -160,6 +174,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     private double orbitCatchUp;
     private Frame frame = new LevelFrame();
     private @Nullable ImpulseListener impulseListener;
+    private @Nullable LeashData leashData;
 
     public AnchorEntity(EntityType<? extends AnchorEntity> type, Level level) {
         super(type, level);
@@ -174,6 +189,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             anchor.readSwing(swing);
         }
         anchor.setPos(anchor.getCurrentCentreOfMass());
+        anchor.setYRot(anchor.getFacingYaw());
         level.addFreshEntity(anchor);
 
         return anchor;
@@ -207,6 +223,10 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
 
     private Vec3 getCurrentShacklePos() {
         return getShacklePos(this.chain.x, this.chain.z);
+    }
+
+    private Vec3 getCurrentLeashPos() {
+        return getCurrentShacklePos().add(calculatePendulumOffset(LEASH_BELOW_SHACKLE, this.body.x, this.body.z));
     }
 
     private Vec3 getCurrentCentreOfMass() {
@@ -289,6 +309,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         }
 
         setPos(getCurrentCentreOfMass());
+        setYRot(getFacingYaw());
     }
 
     private boolean isStillAnchored() {
@@ -524,6 +545,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         this.body.addVelocity(-slipX, -slipZ);
         this.chain.addVelocity(BODY_TO_CHAIN * slipX, BODY_TO_CHAIN * slipZ);
 
+        applyRope();
+
         this.chain.clampVelocity(MAX_SWING_RATE);
         this.body.clampVelocity(MAX_SWING_RATE);
 
@@ -537,6 +560,34 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             this.chain.settle(this.restX, this.restZ);
             this.body.settle(this.restX, this.restZ);
         }
+    }
+
+    private void applyRope() {
+        Entity holder = getLeashHolder();
+        if (holder == null || holder.level() != level()) return;
+
+        Vec3 tied = getCurrentLeashPos();
+        Vec3 toHold = this.frame.toLocalPosition(holder.getRopeHoldPosition(1.0F)).subtract(tied);
+        double distance = toHold.length();
+        double overstretch = distance - this.entityData.get(DATA_ROPE_LENGTH);
+        if (overstretch <= 0.0 || distance < 1.0E-4) return;
+
+        Vec3 pull = toHold.scale(1.0 / distance);
+        Vec3 tiedMotion = this.chain.getMotion().scale(CHAIN_LENGTH).add(this.body.getMotion().scale(LEASH_BELOW_SHACKLE));
+        double needed = (overstretch * ROPE_CORRECTION - pull.dot(tiedMotion)) / calculateInverseEffectiveMass(getCurrentShacklePos().y - tied.y);
+        double tension = Mth.clamp(needed, 0.0, holder instanceof LeashFenceKnotEntity ? TIED_ROPE_MAX_TENSION : HELD_ROPE_MAX_TENSION);
+
+        Vec3 hang = tied.subtract(getSuspensionPoint());
+        double depth = Math.max(-hang.y, MIN_HANG_DEPTH);
+        double pushX = tension * (pull.x + pull.y * hang.x / depth);
+        double pushZ = tension * (pull.z + pull.y * hang.z / depth);
+        double push = Math.sqrt(pushX * pushX + pushZ * pushZ);
+        if (push > 1.0E-6) {
+            applyImpulse(pushX / push, pushZ / push, tied.y, push);
+        }
+
+        this.chain.dampVelocity(TAUT_ROPE_DRAG);
+        this.body.dampVelocity(TAUT_ROPE_DRAG);
     }
 
     private boolean isAtRest() {
@@ -654,6 +705,9 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
+        InteractionResult leashing = super.interact(player, hand);
+        if (leashing.consumesAction()) return leashing;
+
         BlockPos bound = getBoundPos();
         BlockState state = level().getBlockState(bound);
         if (!(state.getBlock() instanceof WhisperingAnchorBlock)) {
@@ -686,6 +740,50 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         }
 
         return stack.useOn(new UseOnContext(player, hand, hit));
+    }
+
+    @Override
+    public @Nullable LeashData getLeashData() {
+        return this.leashData;
+    }
+
+    @Override
+    public void setLeashData(@Nullable LeashData leashData) {
+        this.leashData = leashData;
+    }
+
+    @Override
+    public void setLeashedTo(Entity leashHolder, boolean broadcastPacket) {
+        if (!isLeashed()) {
+            double distance = getCurrentLeashPos().distanceTo(this.frame.toLocalPosition(leashHolder.getRopeHoldPosition(1.0F)));
+            this.entityData.set(DATA_ROPE_LENGTH, (float) Mth.clamp(distance, MIN_ROPE_LENGTH, LEASH_ELASTIC_DIST));
+        }
+
+        Leashable.super.setLeashedTo(leashHolder, broadcastPacket);
+    }
+
+    @Override
+    public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
+        return distance > LEASH_TOO_FAR_DIST;
+    }
+
+    @Override
+    public Vec3 getLeashOffset(float partialTick) {
+        Vec3 offset = calculatePendulumOffset(LEASH_BELOW_SHACKLE - SHACKLE_TO_CENTRE, getBodyX(partialTick), getBodyZ(partialTick));
+        float yaw = getPreciseBodyRotation(partialTick) * Mth.DEG_TO_RAD;
+        float cos = Mth.cos(yaw);
+        float sin = Mth.sin(yaw);
+
+        return new Vec3(offset.x * cos + offset.z * sin, offset.y, offset.z * cos - offset.x * sin);
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        if (!level().isClientSide() && reason.shouldDestroy() && isLeashed()) {
+            dropLeash(true, true);
+        }
+
+        super.remove(reason);
     }
 
     private static BlockHitResult toBlockHitResult(BlockPos pos, Player player) {
@@ -917,6 +1015,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         builder.define(DATA_BODY_VELOCITY_Z, 0.0F);
         builder.define(DATA_COLOR, UNDYED);
         builder.define(DATA_ORBIT_DIRECTION, (byte) 0);
+        builder.define(DATA_ROPE_LENGTH, (float) LEASH_ELASTIC_DIST);
     }
 
     @Override
@@ -924,6 +1023,10 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
         setBoundPos(BlockPos.of(tag.getLong(KEY_BOUND_POS)));
         readSwing(tag.getCompound(KEY_SWING));
         setColor(tag.contains(KEY_COLOR) ? DyeColor.byName(tag.getString(KEY_COLOR), null) : null);
+        this.leashData = readLeashData(tag);
+        if (tag.contains(KEY_ROPE_LENGTH)) {
+            this.entityData.set(DATA_ROPE_LENGTH, tag.getFloat(KEY_ROPE_LENGTH));
+        }
     }
 
     public void readSwing(CompoundTag swing) {
@@ -936,6 +1039,8 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putLong(KEY_BOUND_POS, getBoundPos().asLong());
         tag.put(KEY_SWING, writeSwing());
+        writeLeashData(tag, this.leashData);
+        tag.putFloat(KEY_ROPE_LENGTH, this.entityData.get(DATA_ROPE_LENGTH));
 
         DyeColor color = getColor();
         if (color != null) {
@@ -1052,6 +1157,10 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
             this.velZ -= Math.sin(this.z) * Math.cos(this.z) * velX * velX;
         }
 
+        private Vec3 getMotion() {
+            return getSwingAlongX(this.x, this.z).scale(this.velX).add(getSwingAlongZ(this.x, this.z).scale(this.velZ));
+        }
+
         private void move() {
             this.x += (float) this.velX;
             this.z += (float) this.velZ;
@@ -1077,7 +1186,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity {
 
         private void transform(UnaryOperator<Vec3> rotation) {
             Vec3 direction = rotation.apply(calculatePendulumOffset(1.0, this.x, this.z));
-            Vec3 motion = rotation.apply(getSwingAlongX(this.x, this.z).scale(this.velX).add(getSwingAlongZ(this.x, this.z).scale(this.velZ)));
+            Vec3 motion = rotation.apply(getMotion());
 
             float newX = toAngleX(direction, this.x);
             float newZ = toAngleZ(direction);
