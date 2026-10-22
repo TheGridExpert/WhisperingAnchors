@@ -2,15 +2,12 @@
 
 ## Overview
 
-<table align="right"><tr><td>
-<img src="resources/screenshots/tower_outside.png" width="400"><br>
-<img src="resources/screenshots/tower_anchor.png" width="400">
-</td></tr></table>
-
 **Whispering Anchors** is a Minecraft mod that adds a convenient way to travel between places the player has already
 discovered, without the travel feeling overpowered.
 
 ## Content
+
+<img src="resources/screenshots/tower_two.png" style="float:right;width:34em;margin-top:-2em;margin-left:1em;margin-bottom:1em"></img>
 
 ### Traversal Towers
 
