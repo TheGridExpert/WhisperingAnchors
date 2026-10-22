@@ -7,7 +7,7 @@ discovered, without the travel feeling overpowered.
 
 ## Content
 
-<img src="resources/screenshots/tower_top.png" align="right" width="60%">
+<img src="resources/screenshots/tower_outside.png" align="right" width="50%">
 
 ### Traversal Towers
 
@@ -20,7 +20,7 @@ outposts.
 
 The towers are guarded by pillagers and vindicators. Once you've cleared them out, the tower is up for your use.
 
-<img src="resources/screenshots/tower_anchor.png" align="right" width="60%">
+<img src="resources/screenshots/tower_anchor.png" align="right" width="50%">
 
 ### Whispering Anchor
 
