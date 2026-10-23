@@ -94,6 +94,7 @@ public class AnchorEntity extends Entity implements AnchorIdentity, Leashable {
     private static final double LIMIT_FRICTION = 0.5;
 
     private static final double HIT_SPECIFIC_IMPULSE = 0.02;
+    private static final double MIN_HIT_STRENGTH = 0.2;
     private static final double WALK_SPECIFIC_IMPULSE = 0.0005;
     private static final double PROJECTILE_MASS_RATIO = 0.01;
 
@@ -882,18 +883,24 @@ public class AnchorEntity extends Entity implements AnchorIdentity, Leashable {
     }
 
     public void takeHitFrom(LivingEntity attacker) {
+        float charge = 1.0F;
+        if (attacker instanceof Player player) {
+            charge = player.getAttackStrengthScale(0.5F);
+            player.resetAttackStrengthTicker();
+        }
+
         Vec3 eye = this.frame.toLocalPosition(attacker.getEyePosition());
         Vec3 look = this.frame.toLocalDirection(attacker.getLookAngle());
-        punch(eye, look);
+        punch(eye, look, MIN_HIT_STRENGTH + (1.0 - MIN_HIT_STRENGTH) * charge * charge);
         playImpactSound(1.0F, false);
     }
 
-    public void punch(Vec3 eye, Vec3 look) {
+    private void punch(Vec3 eye, Vec3 look, double strength) {
         double length = Math.sqrt(look.x * look.x + look.z * look.z);
         if (length < 1.0E-4) return;
 
         double contactY = getSwingBody().clip(eye, eye.add(look.scale(6.0))).map(hit -> hit.y).orElse(getCurrentCentreOfMass().y);
-        applyImpulse(look.x / length, look.z / length, contactY, HIT_SPECIFIC_IMPULSE);
+        applyImpulse(look.x / length, look.z / length, contactY, HIT_SPECIFIC_IMPULSE * strength);
     }
 
     public AABB getSwingBody() {
