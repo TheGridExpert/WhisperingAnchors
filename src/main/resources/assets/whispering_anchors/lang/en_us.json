@@ -69,6 +69,8 @@
   "command.whispering_anchors.extract_loot.no_loot": "No loot found in suspicious blocks in the specified area",
   "command.whispering_anchors.extract_loot.too_large": "Too many blocks in the specified area (maximum %s, specified %s)",
 
+  "fml.menu.mods.info.description.whispering_anchors": "Adds a convenient way to travel between places the player has already discovered, without the travel feeling overpowered.",
+
   "whispering_anchors.configuration.bellUseDuration": "Harkening Bell Use Duration",
   "whispering_anchors.configuration.bellUseDuration.desc": "How many ticks the harkening bell has to ring before it teleports its ringer.",
   "whispering_anchors.configuration.bellCooldown": "Harkening Bell Cooldown",

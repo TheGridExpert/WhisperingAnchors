@@ -69,6 +69,8 @@
   "command.whispering_anchors.extract_loot.no_loot": "В указанной области нет подозрительных блоков с добычей",
   "command.whispering_anchors.extract_loot.too_large": "Слишком много блоков в заданной области (максимум %s; указано %s)",
 
+  "fml.menu.mods.info.description.whispering_anchors": "Добавляет удобный способ перемещения между местами, в которых игрок уже бывал ранее, при этом без нарушения баланса.",
+
   "whispering_anchors.configuration.bellUseDuration": "Длительность звона внемлющего колокола",
   "whispering_anchors.configuration.bellUseDuration.desc": "Сколько тиков должен звонить внемлющий колокол, прежде чем перенести звонящего.",
   "whispering_anchors.configuration.bellCooldown": "Перезарядка внемлющего колокола",
